@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { EventEmitter, once } = require('node:events');
+const { withTestDeadline } = require('./helpers/with-test-deadline');
 
 const {
   OcrCancelledError,
@@ -274,13 +275,15 @@ test('a missing-model diagnostic times out initialization and the queue recovers
     && error.timeoutMs === 25
   ));
   const second = service.recognize(PNG_DATA_URL, { supersede: false });
+  // Still await the original promise below; observe cleanup cancellation if an
+  // earlier assertion fails before the queued task can be completed.
+  second.catch(() => {});
 
   workers[0].emit('message', {
     type: 'diagnostic',
     error: { code: 'ENOENT', message: 'eng.traineddata.gz was not found' },
   });
-  const [timeout] = await timeoutEvent;
-  await firstRejection;
+  const [[timeout]] = await withTestDeadline(Promise.all([timeoutEvent, firstRejection]));
   assert.deepEqual(
     { taskId: timeout.taskId, phase: timeout.phase, timeoutMs: timeout.timeoutMs },
     { taskId: first.taskId, phase: 'initialization', timeoutMs: 25 },
@@ -324,8 +327,7 @@ test('recognition has a separate watchdog and recycles the worker', async (t) =>
     phase: 'recognition',
   });
 
-  const [timeout] = await timeoutEvent;
-  await rejection;
+  const [[timeout]] = await withTestDeadline(Promise.all([timeoutEvent, rejection]));
   assert.equal(timeout.phase, 'recognition');
   assert.equal(workers[0].terminated, true);
   assert.equal(service.pendingCount, 0);

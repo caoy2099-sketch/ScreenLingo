@@ -2,6 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { withTestDeadline } = require('./helpers/with-test-deadline');
 
 const {
   MAX_RESPONSE_LENGTH,
@@ -116,7 +117,7 @@ test('Google 翻译支持 AbortSignal 与超时，并返回中文错误', async 
     init.signal.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })), { once: true });
   });
   await assert.rejects(
-    translateWithGoogle({ text: 'hello', fetchImpl: hangingFetch, timeoutMs: 5 }),
+    withTestDeadline(translateWithGoogle({ text: 'hello', fetchImpl: hangingFetch, timeoutMs: 5 })),
     (error) => error.code === 'TIMEOUT' && /超时/.test(error.message)
   );
 
