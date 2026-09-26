@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build trusted Windows artifacts
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify tag matches package version
+        shell: pwsh
+        run: |
+          $packageVersion = node -p "require('./package.json').version"
+          $expectedTag = "v$packageVersion"
+          if ($env:GITHUB_REF_NAME -ne $expectedTag) {
+            throw "Tag '$env:GITHUB_REF_NAME' does not match package version '$packageVersion'. Expected '$expectedTag'."
+          }
+
+      - name: Check and test
+        run: |
+          npm run check
+          npm test
+          npm run release:check
+          npm run test:e2e
+
+      - name: Build release artifacts
+        run: |
+          npm run pack
+          npm run dist -- --publish never
+
+      - name: Prepare release assets
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          $portable = "dist\ScreenLingo-$version-x64.exe"
+          $unpacked = 'dist\win-unpacked'
+          $model = 'dist\win-unpacked\resources\tessdata\eng.traineddata.gz'
+          $assetsDirectory = 'release-assets'
+          $portableAsset = Join-Path $assetsDirectory (Split-Path -Leaf $portable)
+          $zipAsset = Join-Path $assetsDirectory "ScreenLingo-$version-win-x64.zip"
+          $checksums = Join-Path $assetsDirectory 'SHA256SUMS.txt'
+
+          if (-not (Test-Path -LiteralPath $portable -PathType Leaf)) {
+            throw "Portable executable was not created at $portable"
+          }
+          if (-not (Test-Path -LiteralPath $unpacked -PathType Container)) {
+            throw "Unpacked application was not created at $unpacked"
+          }
+          if (-not (Test-Path -LiteralPath $model -PathType Leaf)) {
+            throw "Bundled OCR model was not created at $model"
+          }
+
+          New-Item -ItemType Directory -Path $assetsDirectory | Out-Null
+          Copy-Item -LiteralPath $portable -Destination $portableAsset
+          Compress-Archive -Path $unpacked -DestinationPath $zipAsset -CompressionLevel Optimal
+          $assets = @($portableAsset, $zipAsset)
+          $lines = foreach ($asset in $assets) {
+            $hash = (Get-FileHash -LiteralPath $asset -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash *$(Split-Path -Leaf $asset)"
+          }
+          $checksumContents = ($lines -join "`n") + "`n"
+          [System.IO.File]::WriteAllText(
+            (Join-Path $PWD $checksums),
+            $checksumContents,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-assets
+          path: release-assets/
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 0
+
+  publish:
+    name: Publish trusted artifacts
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-assets
+          path: release-assets
+
+      - name: Verify release checksums
+        shell: bash
+        working-directory: release-assets
+        run: |
+          set -euo pipefail
+          sha256sum --check SHA256SUMS.txt
+
+      - name: Publish GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          portable="release-assets/ScreenLingo-${version}-x64.exe"
+          zip="release-assets/ScreenLingo-${version}-win-x64.zip"
+          checksums="release-assets/SHA256SUMS.txt"
+
+          for asset in "$portable" "$zip" "$checksums"; do
+            if [[ ! -f "$asset" ]]; then
+              echo "Missing release asset: $asset" >&2
+              exit 1
+            fi
+          done
+
+          arguments=(
+            release create "$GITHUB_REF_NAME"
+            --repo "$GH_REPO"
+            --title "ScreenLingo $GITHUB_REF_NAME"
+            --generate-notes
+            --verify-tag
+          )
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            arguments+=(--prerelease)
+          fi
+          arguments+=("$portable" "$zip" "$checksums")
+          gh "${arguments[@]}"

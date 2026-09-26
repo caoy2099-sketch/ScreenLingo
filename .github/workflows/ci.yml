@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    name: Test and build on Windows
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check JavaScript syntax
+        run: npm run check
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Check release readiness
+        run: npm run release:check
+
+      - name: Run Electron desktop tests
+        run: npm run test:e2e
+
+      - name: Build unpacked Windows application
+        run: npm run pack
+
+      - name: Verify packaged runtime
+        shell: pwsh
+        run: |
+          $appPath = 'dist\win-unpacked\截译 ScreenLingo.exe'
+          $modelPath = 'dist\win-unpacked\resources\tessdata\eng.traineddata.gz'
+          if (-not (Test-Path -LiteralPath $appPath -PathType Leaf)) {
+            throw "Packaged application was not created at $appPath"
+          }
+          if (-not (Test-Path -LiteralPath $modelPath -PathType Leaf)) {
+            throw "Bundled OCR model was not created at $modelPath"
+          }

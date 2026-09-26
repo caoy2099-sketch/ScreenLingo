@@ -1,0 +1,72 @@
+{
+  "name": "screenlingo",
+  "version": "0.1.0",
+  "description": "Windows screenshot OCR, Chinese translation, and visual troubleshooting for developer errors.",
+  "main": "src/main/main.js",
+  "author": "ScreenLingo contributors",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "notices": "node scripts/generate-third-party-notices.cjs",
+    "screenshots": "node scripts/capture-readme-screenshots.cjs",
+    "release:check": "node scripts/release-preflight.cjs && node scripts/generate-third-party-notices.cjs --check",
+    "test:e2e": "node tests/e2e/smoke.cjs",
+    "test:network": "node tests/e2e/network.cjs",
+    "test": "node --test tests/*.test.js",
+    "check": "node --check src/main/main.js && node --check src/main/capture-service.js && node --check src/main/image-service.js && node --check src/main/ocr-service.js && node --check src/main/ocr-worker.js && node --check src/main/network-service.js && node --check src/main/translation-service.js && node --check src/main/settings-store.js && node --check src/main/preload.js && node --check src/renderer/app.js && node --check src/renderer/capture.js",
+    "dist": "electron-builder --win portable",
+    "pack": "electron-builder --dir"
+  },
+  "dependencies": {
+    "@tesseract.js-data/eng": "^1.0.0",
+    "image-size": "2.0.4",
+    "lucide": "1.41.0",
+    "tesseract.js": "7.0.0"
+  },
+  "devDependencies": {
+    "electron": "44.2.0",
+    "electron-builder": "26.15.3",
+    "playwright-core": "1.63.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "build": {
+    "appId": "io.screenlingo.desktop",
+    "productName": "截译 ScreenLingo",
+    "artifactName": "ScreenLingo-${version}-${arch}.${ext}",
+    "electronDist": "node_modules/electron/dist",
+    "asar": true,
+    "asarUnpack": [
+      "src/main/ocr-worker.js",
+      "node_modules/**/*"
+    ],
+    "files": [
+      "src/**/*",
+      "package.json",
+      "LICENSE",
+      "README.md",
+      "THIRD_PARTY_NOTICES.md",
+      "docs/**/*",
+      "!node_modules/@tesseract.js-data/eng/**/*",
+      "node_modules/lucide/dist/umd/lucide.min.js"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz",
+        "to": "tessdata/eng.traineddata.gz"
+      },
+      {
+        "from": "node_modules/tesseract.js/LICENSE.md",
+        "to": "tessdata/LICENSE-APACHE-2.0.txt"
+      }
+    ],
+    "win": {
+      "icon": "src/assets/icon.ico",
+      "target": [
+        "portable"
+      ]
+    }
+  }
+}

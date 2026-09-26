@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; img-src data:; style-src 'self'; script-src 'self'; font-src 'self';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>截译 ScreenLingo</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="../../node_modules/lucide/dist/umd/lucide.min.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div id="app-shell" class="app-shell" data-view="empty">
+      <aside class="sidebar" aria-label="主导航">
+        <div class="brand" aria-label="截译 ScreenLingo">
+          <span class="brand-mark" aria-hidden="true"><i data-lucide="scan"></i><span>译</span></span>
+          <span class="brand-copy">
+            <strong>截译</strong>
+            <small>ScreenLingo</small>
+          </span>
+        </div>
+        <div class="sidebar-label">你的翻译空间</div>
+        <button id="workspace-open" class="nav-button" type="button" aria-current="page" title="翻译工作台">
+          <i data-lucide="panels-top-left" aria-hidden="true"></i><span>翻译工作台</span>
+        </button>
+        <nav id="actionbar" class="actionbar" aria-label="翻译操作">
+          <div class="sidebar-label">开始新的翻译</div>
+          <button id="capture-button" class="nav-button" type="button" aria-label="框选截图" title="框选截图">
+            <i data-lucide="scan-text" aria-hidden="true"></i><span>框选截图</span>
+          </button>
+          <button id="clipboard-button" class="nav-button" type="button" aria-label="读取剪贴板" title="读取剪贴板">
+            <i data-lucide="clipboard" aria-hidden="true"></i><span>读取剪贴板</span>
+          </button>
+          <button id="image-button" class="nav-button" type="button" aria-label="打开图片" title="打开图片">
+            <i data-lucide="image-plus" aria-hidden="true"></i><span>打开图片</span>
+          </button>
+          <button id="cancel-button" class="nav-button command-quiet" type="button" aria-label="停止" title="停止" hidden>
+            <i data-lucide="square" aria-hidden="true"></i><span>停止处理</span>
+          </button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="shortcut-note"><i data-lucide="command" aria-hidden="true"></i><span>随时唤起截图</span><kbd data-shortcut="capture">Alt + Shift + S</kbd></div>
+          <button id="settings-open" class="nav-button" type="button" aria-label="打开设置" title="设置">
+            <i data-lucide="settings-2" aria-hidden="true"></i><span>偏好设置</span>
+          </button>
+          <span class="sidebar-caption">从看见，到理解。</span>
+        </div>
+      </aside>
+
+      <header class="topbar">
+        <div class="page-heading"><span class="page-symbol" aria-hidden="true"><i data-lucide="languages"></i></span><h1 id="page-title">翻译工作台</h1><span class="page-subtitle">截图 · 识别 · 理解</span></div>
+        <div class="topbar-actions">
+          <span id="privacy-state" class="status-chip">
+            <i data-lucide="shield-check" aria-hidden="true"></i>
+            <span>本地 OCR</span>
+          </span>
+          <button id="theme-toggle" class="icon-button" type="button" aria-label="切换主题" title="切换主题">
+            <i data-lucide="sun-moon" aria-hidden="true"></i>
+          </button>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <div id="result-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+        <div id="drop-overlay" class="drop-overlay" role="status" aria-live="polite" hidden>
+          <i data-lucide="image-plus" aria-hidden="true"></i>
+          <span>释放图片，开始识别</span>
+          <small>支持 PNG、JPEG、WebP 和 BMP</small>
+        </div>
+
+        <section id="empty-view" class="empty-view" aria-labelledby="empty-title">
+          <div class="welcome-heading"><span class="workspace-label"><span aria-hidden="true"></span>准备好，开始理解</span><span class="workspace-format">EN <i data-lucide="arrow-right" aria-hidden="true"></i> 中文</span></div>
+          <div class="welcome-stage">
+            <div class="empty-intro">
+              <span class="empty-eyebrow">少一点切换，多一点心流</span>
+              <h2 id="empty-title">截取一刻，<br /><em>即刻读懂。</em></h2>
+              <p>报错、文档、屏幕上的英文。<br />轻轻一框，让理解自然发生。</p>
+              <button id="empty-capture-button" class="selection-prompt" type="button">
+                <i data-lucide="scan-text" aria-hidden="true"></i><span>开始框选截图</span><i data-lucide="arrow-up-right" aria-hidden="true"></i>
+              </button>
+              <span class="capture-shortcut">或按 <kbd data-shortcut="capture">Alt + Shift + S</kbd></span>
+            </div>
+            <div class="translation-preview" role="img" aria-label="翻译示例：框选英文 TypeError 报错，获得中文类型错误译文">
+              <span class="preview-label">一次框选，两种语言</span>
+              <div class="preview-code" aria-hidden="true">
+                <div class="preview-window"><span class="window-dots"><b></b><b></b><b></b></span><span>terminal</span><span class="demo-tag">示例</span></div>
+                <div class="preview-lines"><span><b>01</b><span>$ npm run dev</span></span><span><b>02</b><span class="code-muted">Starting development server…</span></span></div>
+                <div class="preview-selection"><span class="crop-corner crop-tl"></span><span class="crop-corner crop-tr"></span><span class="crop-corner crop-bl"></span><span class="crop-corner crop-br"></span><code><strong>TypeError</strong>: Cannot read<br />properties of undefined</code><span class="selection-cursor"><i data-lucide="mouse-pointer-2"></i></span></div>
+                <span class="code-location">at main (index.js:42:7)</span>
+              </div>
+              <div class="preview-result" aria-hidden="true"><span class="preview-result-icon"><i data-lucide="languages"></i></span><div><span class="preview-result-label">中文译文 <i data-lucide="check"></i></span><p>类型错误：<br />无法读取未定义对象的属性</p></div></div>
+            </div>
+          </div>
+          <div class="input-divider"><span>也可以从这里开始</span></div>
+          <div class="empty-secondary" role="group" aria-label="其他输入方式">
+            <button id="empty-clipboard-button" class="input-card" type="button">
+              <span class="input-card-icon"><i data-lucide="clipboard" aria-hidden="true"></i></span>
+              <span class="input-card-copy"><strong>读取剪贴板</strong><small>接着翻译刚复制的图片或文字</small></span><i class="card-arrow" data-lucide="arrow-up-right" aria-hidden="true"></i>
+            </button>
+            <button id="empty-image-button" class="input-card" type="button">
+              <span class="input-card-icon image-card-icon"><i data-lucide="image-plus" aria-hidden="true"></i></span>
+              <span class="input-card-copy"><strong>打开本地图片</strong><small>导入截图，提取并翻译文字</small></span><i class="card-arrow" data-lucide="arrow-up-right" aria-hidden="true"></i>
+            </button>
+          </div>
+          <p class="drop-hint"><i data-lucide="mouse-pointer-2" aria-hidden="true"></i><span>支持直接拖入图片，或按 <kbd>Ctrl + V</kbd> 粘贴截图</span></p>
+        </section>
+
+        <section id="workbench" class="workbench" aria-label="翻译工作台" hidden>
+          <section class="source-pane" aria-labelledby="source-title">
+            <header class="pane-header">
+              <div>
+                <span class="pane-kicker">原文 · SOURCE</span>
+                <h2 id="source-title">原始内容</h2>
+              </div>
+              <div class="pane-actions">
+                <span id="confidence-label" class="meta-label" hidden></span>
+                <button id="copy-source-button" class="icon-button icon-small" type="button" aria-label="复制原文" title="复制原文">
+                  <i data-lucide="copy" aria-hidden="true"></i>
+                </button>
+              </div>
+            </header>
+
+            <div id="source-tabs" class="segmented" role="tablist" aria-label="原始内容视图">
+              <button id="image-tab" class="segment active" type="button" role="tab" aria-selected="true" aria-controls="image-panel" disabled>
+                <i data-lucide="image" aria-hidden="true"></i>
+                <span>截图</span>
+              </button>
+              <button id="text-tab" class="segment" type="button" role="tab" aria-selected="false" aria-controls="text-panel" tabindex="-1">
+                <i data-lucide="text-cursor-input" aria-hidden="true"></i>
+                <span>识别文本</span>
+              </button>
+            </div>
+
+            <div id="image-panel" class="source-panel" role="tabpanel" aria-labelledby="image-tab" tabindex="0">
+              <div class="image-stage">
+                <img id="source-image" alt="待识别的截图" />
+                <div id="image-loading" class="image-loading" hidden>
+                  <span class="spinner" aria-hidden="true"></span>
+                  <span id="ocr-progress-label">正在识别</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="text-panel" class="source-panel" role="tabpanel" aria-labelledby="text-tab" tabindex="0" hidden>
+              <label class="sr-only" for="source-text">识别文本</label>
+              <textarea id="source-text" spellcheck="false" placeholder="粘贴需要翻译的报错文本"></textarea>
+            </div>
+
+            <footer class="pane-footer">
+              <span id="source-engine" class="engine-label">本地英文识别</span>
+              <button id="translate-button" class="inline-primary" type="button">
+                <i data-lucide="languages" aria-hidden="true"></i>
+                <span>翻译文本</span>
+              </button>
+            </footer>
+          </section>
+
+          <div class="process-rail" aria-hidden="true">
+            <span id="rail-capture" class="rail-node active"></span>
+            <span class="rail-line"></span>
+            <span id="rail-ocr" class="rail-node"></span>
+            <span class="rail-line"></span>
+            <span id="rail-translate" class="rail-node"></span>
+          </div>
+
+          <section class="result-pane" aria-labelledby="result-title">
+            <header class="pane-header">
+              <div>
+                <span class="pane-kicker">译文 · ZH-CN</span>
+                <h2 id="result-title">中文结果</h2>
+              </div>
+              <div class="pane-actions">
+                <span id="provider-label" class="meta-label">在线翻译</span>
+                <button id="retry-button" class="icon-button icon-small" type="button" aria-label="重新翻译" title="重新翻译">
+                  <i data-lucide="refresh-cw" aria-hidden="true"></i>
+                </button>
+                <button id="copy-result-button" class="icon-button icon-small" type="button" aria-label="复制译文" title="复制译文">
+                  <i data-lucide="copy" aria-hidden="true"></i>
+                </button>
+              </div>
+            </header>
+
+            <div class="result-body">
+              <div id="result-skeleton" class="result-skeleton" hidden aria-label="正在翻译">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <div id="result-error" class="inline-error" role="alert" hidden>
+                <i data-lucide="circle-alert" aria-hidden="true"></i>
+                <div>
+                  <strong id="error-title">翻译失败</strong>
+                  <p id="error-message"></p>
+                </div>
+                <button id="error-retry-button" type="button">重试</button>
+              </div>
+              <pre id="translation-output" role="region" aria-labelledby="result-title" tabindex="0"></pre>
+            </div>
+
+            <section class="question-area" aria-labelledby="question-title">
+              <header class="question-header">
+                <div>
+                  <i data-lucide="message-square-code" aria-hidden="true"></i>
+                  <h3 id="question-title">截图提问</h3>
+                </div>
+                <span id="vision-state" class="meta-label">需配置视觉模型</span>
+              </header>
+              <div id="answer-output" class="answer-output" role="region" aria-labelledby="question-title" tabindex="0" hidden></div>
+              <form id="question-form" class="question-form">
+                <label class="sr-only" for="question-input">关于截图的问题</label>
+                <input id="question-input" name="question" type="text" maxlength="800" autocomplete="off" placeholder="这个错误的原因是什么？" />
+                <button id="question-submit" class="send-button" type="submit" aria-label="发送问题" title="发送">
+                  <i data-lucide="send" aria-hidden="true"></i>
+                </button>
+              </form>
+            </section>
+          </section>
+        </section>
+
+        <section id="settings-view" class="settings-view" aria-labelledby="settings-title" hidden>
+          <header class="settings-header">
+            <button id="settings-back" class="icon-button" type="button" aria-label="返回工作台" title="返回">
+              <i data-lucide="arrow-left" aria-hidden="true"></i>
+            </button>
+            <div>
+              <span class="pane-kicker">PREFERENCES</span>
+              <h2 id="settings-title" tabindex="-1">让截译更合你的习惯</h2>
+            </div>
+          </header>
+
+          <form id="settings-form" class="settings-form">
+            <section class="settings-section" aria-labelledby="provider-heading">
+              <div class="settings-section-title">
+                <h3 id="provider-heading"><i data-lucide="languages" aria-hidden="true"></i>翻译服务</h3>
+                <div class="settings-section-actions">
+                  <span id="api-key-state" class="meta-label"></span>
+                  <button id="api-key-clear" class="icon-button icon-small" type="button" aria-label="清除已保存的 API Key" title="清除已保存的 API Key" hidden>
+                    <i data-lucide="trash-2" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="segmented provider-segmented" role="radiogroup" aria-label="翻译服务">
+                <label class="segment radio-segment">
+                  <input type="radio" name="provider" value="bing" />
+                  <i data-lucide="languages" aria-hidden="true"></i>
+                  <span>必应</span>
+                </label>
+                <label class="segment radio-segment">
+                  <input type="radio" name="provider" value="google" />
+                  <i data-lucide="globe-2" aria-hidden="true"></i>
+                  <span>Google</span>
+                </label>
+                <label class="segment radio-segment">
+                  <input type="radio" name="provider" value="openai" />
+                  <i data-lucide="server-cog" aria-hidden="true"></i>
+                  <span>OpenAI 兼容</span>
+                </label>
+              </div>
+
+              <div id="openai-fields" class="field-grid">
+                <label class="field field-wide">
+                  <span>服务地址</span>
+                  <input id="endpoint-input" name="endpoint" type="url" maxlength="500" autocomplete="url" />
+                </label>
+                <label class="field">
+                  <span>翻译模型</span>
+                  <input id="model-input" name="model" type="text" maxlength="120" autocomplete="off" />
+                </label>
+                <label class="field">
+                  <span>视觉模型</span>
+                  <input id="vision-model-input" name="visionModel" type="text" maxlength="120" autocomplete="off" />
+                </label>
+                <label class="field field-wide">
+                  <span>API Key</span>
+                  <span class="password-field">
+                    <input id="api-key-input" name="apiKey" type="password" maxlength="500" autocomplete="off" />
+                    <button id="api-key-toggle" class="field-icon-button" type="button" aria-label="显示 API Key" aria-pressed="false" title="显示 API Key">
+                      <i data-lucide="eye" aria-hidden="true"></i>
+                    </button>
+                  </span>
+                </label>
+              </div>
+            </section>
+
+            <section class="settings-section" aria-labelledby="network-heading">
+              <div class="settings-section-title">
+                <h3 id="network-heading"><i data-lucide="network" aria-hidden="true"></i>网络连接</h3>
+                <button id="network-check" class="icon-button" type="button" aria-label="检测代理" title="检测代理"><i data-lucide="refresh-cw" aria-hidden="true"></i></button>
+              </div>
+              <div class="segmented network-segmented" role="radiogroup" aria-label="网络模式">
+                <label class="segment radio-segment"><input type="radio" name="networkMode" value="auto" /><span>自动</span></label>
+                <label class="segment radio-segment"><input type="radio" name="networkMode" value="system" /><span>系统代理</span></label>
+                <label class="segment radio-segment"><input type="radio" name="networkMode" value="direct" /><span>直连</span></label>
+                <label class="segment radio-segment"><input type="radio" name="networkMode" value="manual" /><span>手动代理</span></label>
+              </div>
+              <label id="proxy-field" class="field">
+                <span>本机代理地址</span>
+                <input id="proxy-input" name="proxyUrl" type="text" maxlength="200" spellcheck="false" autocomplete="off" />
+              </label>
+              <p id="network-result" class="network-result" role="status"></p>
+            </section>
+
+            <section class="settings-section" aria-labelledby="behavior-heading">
+              <div class="settings-section-title"><h3 id="behavior-heading"><i data-lucide="sliders-horizontal" aria-hidden="true"></i>快捷键与行为</h3></div>
+              <div class="field-grid">
+                <label class="field">
+                  <span>截图热键</span>
+                  <input id="capture-hotkey-input" name="screenshotHotkey" type="text" maxlength="80" spellcheck="false" />
+                </label>
+                <label class="field">
+                  <span>剪贴板热键</span>
+                  <input id="clipboard-hotkey-input" name="clipboardHotkey" type="text" maxlength="80" spellcheck="false" />
+                </label>
+              </div>
+              <label class="switch-row">
+                <span>
+                  <strong>识别后自动翻译</strong>
+                  <small>文字识别完成后，直接获取译文</small>
+                </span>
+                <input id="auto-translate-input" name="autoTranslate" type="checkbox" />
+                <span class="switch" aria-hidden="true"></span>
+              </label>
+              <label class="switch-row">
+                <span>
+                  <strong>关闭到系统托盘</strong>
+                  <small>在后台待命，随时使用快捷键</small>
+                </span>
+                <input id="close-to-tray-input" name="closeToTray" type="checkbox" />
+                <span class="switch" aria-hidden="true"></span>
+              </label>
+            </section>
+
+            <section class="settings-section" aria-labelledby="theme-heading">
+              <div class="settings-section-title"><h3 id="theme-heading"><i data-lucide="palette" aria-hidden="true"></i>外观主题</h3></div>
+              <div class="segmented theme-segmented" role="radiogroup" aria-label="外观主题">
+                <label class="segment radio-segment"><input type="radio" name="theme" value="system" /><span>跟随系统</span></label>
+                <label class="segment radio-segment"><input type="radio" name="theme" value="light" /><span>浅色</span></label>
+                <label class="segment radio-segment"><input type="radio" name="theme" value="dark" /><span>深色</span></label>
+              </div>
+            </section>
+
+            <section class="settings-section data-boundary" aria-labelledby="privacy-heading">
+              <div class="settings-section-title"><h3 id="privacy-heading"><i data-lucide="shield-check" aria-hidden="true"></i>数据与隐私</h3></div>
+              <dl>
+                <div><dt>截图与 OCR</dt><dd><i data-lucide="hard-drive" aria-hidden="true"></i>本机内存</dd></div>
+                <div><dt>免密在线翻译</dt><dd><i data-lucide="text" aria-hidden="true"></i>仅识别文字</dd></div>
+                <div><dt>截图提问</dt><dd><i data-lucide="image" aria-hidden="true"></i>配置的服务</dd></div>
+              </dl>
+            </section>
+
+            <div class="settings-footer">
+              <p id="settings-error" class="form-error" role="alert" hidden></p>
+              <button id="settings-save" class="command-button command-primary" type="submit">
+                <i data-lucide="save" aria-hidden="true"></i>
+                <span>保存设置</span>
+              </button>
+            </div>
+          </form>
+        </section>
+      </main>
+
+      <footer class="statusbar">
+        <span id="status-dot" class="status-dot" aria-hidden="true"></span>
+        <span id="status-text" role="status" aria-live="polite">就绪</span>
+        <span class="status-spacer"></span>
+        <span id="status-engine">本地 OCR · 自动网络</span>
+      </footer>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; img-src data:; style-src 'self'; script-src 'self';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>截译 - 框选</title>
+    <link rel="stylesheet" href="capture.css" />
+    <script defer src="capture.js"></script>
+  </head>
+  <body>
+    <main id="capture-surface" tabindex="0" aria-label="截图框选区域" aria-describedby="capture-instructions">
+      <p id="capture-instructions" class="sr-only">拖动鼠标框选。也可以按 K 启用键盘框选，使用方向键移动，Shift 加方向键缩放，Enter 确认，Esc 取消。</p>
+      <img id="screen-image" alt="当前屏幕截图" draggable="false" />
+      <div id="selection" hidden>
+        <span class="corner corner-tl"></span>
+        <span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span>
+        <span class="corner corner-br"></span>
+        <output id="selection-size" aria-live="polite"></output>
+      </div>
+      <div id="cursor-x" class="guide"></div>
+      <div id="cursor-y" class="guide"></div>
+      <div class="capture-mark" role="note">
+        <span class="capture-brand">截译</span>
+        <span class="capture-divider" aria-hidden="true"></span>
+        <span class="capture-hint">拖动框选 · <kbd>K</kbd> 键盘框选 · <kbd>Esc</kbd> 取消</span>
+        <span id="capture-error" class="capture-error" role="status" aria-live="polite" aria-atomic="true" hidden></span>
+      </div>
+    </main>
+  </body>
+</html>

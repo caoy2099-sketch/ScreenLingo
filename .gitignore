@@ -1,0 +1,25 @@
+node_modules/
+dist/
+release/
+release-assets/
+artifacts/
+coverage/
+
+# Local settings and accidental Windows-expanded paths
+.env
+.env.*
+!.env.example
+%SystemDrive%/
+%ProgramData%/
+
+# Signing credentials must never be committed
+*.p12
+*.pfx
+*.pem
+*.jks
+*.key
+
+*.log
+.DS_Store
+Thumbs.db
+Desktop.ini
