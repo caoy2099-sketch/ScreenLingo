@@ -9,6 +9,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Fixed
 
 - Keep mocked OCR and translation timeout tests alive until their assertions finish on Node.js 22, matching the lifetime of real worker threads and network requests.
+- Give the desktop E2E test's second offline OCR assertion enough time for slower GitHub Windows runners while retaining a bounded failure timeout.
 
 ## [0.1.0] - 2026-09-26
 

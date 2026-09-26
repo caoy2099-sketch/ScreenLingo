@@ -17,6 +17,7 @@ const cancelledQuestion = '取消后保留这个问题';
 const requests = [];
 const errors = [];
 const checks = [];
+const OCR_UI_TIMEOUT_MS = 30_000;
 
 async function captureScreenshot(page, filename) {
   await page.evaluate(async () => {
@@ -399,7 +400,10 @@ async function run() {
     await keyboardCapturePromise;
     const keyboardCaptureResult = await page.evaluate(() => window.keyboardCaptureTestResult);
     assert.equal(keyboardCaptureResult.ok, true, JSON.stringify(keyboardCaptureResult));
-    await page.waitForFunction(() => document.querySelector('#source-text').value.includes('TypeError'));
+    await page.waitForFunction(
+      () => document.querySelector('#source-text').value.includes('TypeError'),
+      { timeout: OCR_UI_TIMEOUT_MS },
+    );
     await captureScreenshot(page, '06-captured-fixture.png');
     checks.push('Real desktop drag selection crops a synthetic error window and completes offline OCR');
 
