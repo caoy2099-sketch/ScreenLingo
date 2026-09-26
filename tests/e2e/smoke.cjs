@@ -402,6 +402,7 @@ async function run() {
     assert.equal(keyboardCaptureResult.ok, true, JSON.stringify(keyboardCaptureResult));
     await page.waitForFunction(
       () => document.querySelector('#source-text').value.includes('TypeError'),
+      undefined,
       { timeout: OCR_UI_TIMEOUT_MS },
     );
     await captureScreenshot(page, '06-captured-fixture.png');
