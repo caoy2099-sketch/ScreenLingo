@@ -17,7 +17,6 @@ const cancelledQuestion = '取消后保留这个问题';
 const requests = [];
 const errors = [];
 const checks = [];
-const OCR_UI_TIMEOUT_MS = 30_000;
 
 async function captureScreenshot(page, filename) {
   await page.evaluate(async () => {
@@ -37,6 +36,15 @@ async function resizeMainWindow(app, page, width, height) {
   }, { width, height });
   await page.waitForFunction(([contentWidth, contentHeight]) =>
     window.innerWidth === contentWidth && window.innerHeight === contentHeight, contentSize);
+}
+
+async function pressForDistance(page, key, distance) {
+  assert.ok(Number.isFinite(distance), 'Keyboard adjustment must have a finite distance');
+  const steps = Math.max(0, Math.ceil(distance / 10));
+  assert.ok(steps <= 1000, 'Keyboard adjustment must stay within 1000 presses');
+  for (let step = 0; step < steps; step += 1) {
+    await page.keyboard.press(key);
+  }
 }
 
 async function assertNoHorizontalOverflow(page, viewSelector) {
@@ -75,6 +83,8 @@ async function run() {
   delete env.ELECTRON_RUN_AS_NODE;
   const packaged = Boolean(process.env.SCREENLINGO_EXE);
   let app;
+  let page;
+  let keyboardCaptureDiagnostics = null;
   try {
     app = await electron.launch({
       executablePath: packaged ? process.env.SCREENLINGO_EXE : require('electron'),
@@ -82,7 +92,7 @@ async function run() {
       env, timeout: 30000
     });
     app.on('window', (page) => page.on('pageerror', (error) => errors.push(error.message)));
-    const page = await app.firstWindow();
+    page = await app.firstWindow();
     page.on('pageerror', (error) => errors.push(error.message));
     page.setDefaultTimeout(15000);
     await page.waitForFunction(() => typeof window.screenLingo === 'object' && document.querySelector('#settings-open svg'));
@@ -368,10 +378,12 @@ async function run() {
     assert.match(await page.locator('#source-text').inputValue(), /MODULE_NOT_FOUND/);
     await fixture.evaluate(() => {
       const fixtureImage = document.querySelector('img');
-      fixtureImage.style.left = `${Math.round((window.innerWidth - 650) / 2)}px`;
-      fixtureImage.style.top = `${Math.round((window.innerHeight - 250) / 2)}px`;
+      const { width, height } = fixtureImage.getBoundingClientRect();
+      fixtureImage.style.left = `${Math.round((window.innerWidth - width) / 2)}px`;
+      fixtureImage.style.top = `${Math.round((window.innerHeight - height) / 2)}px`;
     });
     await fixture.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const fixtureBounds = await fixture.locator('img').evaluate((image) => image.getBoundingClientRect().toJSON());
     const keyboardCaptureWindow = app.waitForEvent('window');
     const keyboardCapturePromise = page.evaluate(() => {
       window.keyboardCaptureTestResult = window.screenLingo.captureScreen();
@@ -381,32 +393,47 @@ async function run() {
     await keyboardOverlay.waitForFunction(() => document.querySelector('#screen-image')?.naturalWidth > 0);
     await keyboardOverlay.keyboard.press('k');
     assert.equal(await keyboardOverlay.locator('#selection').isVisible(), true);
-    const initialKeyboardRect = await keyboardOverlay.evaluate(() => ({
-      width: Number.parseFloat(document.querySelector('#selection').style.width),
-      height: Number.parseFloat(document.querySelector('#selection').style.height)
-    }));
-    const keyboardViewportWidth = await keyboardOverlay.evaluate(() => window.innerWidth);
+    const selectionBounds = () => keyboardOverlay.locator('#selection').evaluate((selection) => selection.getBoundingClientRect().toJSON());
+    const initialKeyboardRect = await selectionBounds();
+    const keyboardViewport = await keyboardOverlay.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }));
+    keyboardCaptureDiagnostics = { fixtureBounds, viewport: keyboardViewport, initialSelection: initialKeyboardRect };
+    assert.ok(fixtureBounds.left >= 0 && fixtureBounds.top >= 0
+      && fixtureBounds.right <= keyboardViewport.width && fixtureBounds.bottom <= keyboardViewport.height,
+    'The complete OCR fixture must fit inside the capture viewport');
     await keyboardOverlay.keyboard.press('ArrowLeft');
     await keyboardOverlay.keyboard.press('Shift+ArrowRight');
-    const movedKeyboardRect = await keyboardOverlay.evaluate(() => ({
-      x: Number.parseFloat(document.querySelector('#selection').style.left),
-      width: Number.parseFloat(document.querySelector('#selection').style.width)
-    }));
-    assert.equal(movedKeyboardRect.x, Math.max(0, Math.round((keyboardViewportWidth - initialKeyboardRect.width) / 2) - 10));
+    const movedKeyboardRect = await selectionBounds();
+    keyboardCaptureDiagnostics.movedSelection = movedKeyboardRect;
+    assert.equal(movedKeyboardRect.x, Math.max(0, Math.round((keyboardViewport.width - initialKeyboardRect.width) / 2) - 10));
     assert.equal(movedKeyboardRect.width, initialKeyboardRect.width + 10);
+
+    // The default selection is only half the screen width; on small CI displays
+    // it can cut off TypeError even though desktop capture and OCR both succeed.
+    await pressForDistance(keyboardOverlay, 'ArrowLeft', movedKeyboardRect.left - Math.max(0, fixtureBounds.left - 10));
+    await pressForDistance(keyboardOverlay, 'ArrowUp', movedKeyboardRect.top - Math.max(0, fixtureBounds.top - 10));
+    const shiftedKeyboardRect = await selectionBounds();
+    await pressForDistance(keyboardOverlay, 'Shift+ArrowRight', Math.min(keyboardViewport.width, fixtureBounds.right + 10) - shiftedKeyboardRect.right);
+    await pressForDistance(keyboardOverlay, 'Shift+ArrowDown', Math.min(keyboardViewport.height, fixtureBounds.bottom + 10) - shiftedKeyboardRect.bottom);
+    const finalKeyboardRect = await selectionBounds();
+    keyboardCaptureDiagnostics.finalSelection = finalKeyboardRect;
+    assert.ok(finalKeyboardRect.left <= fixtureBounds.left && finalKeyboardRect.top <= fixtureBounds.top
+      && finalKeyboardRect.right >= fixtureBounds.right && finalKeyboardRect.bottom >= fixtureBounds.bottom,
+    'Keyboard selection must include the entire OCR fixture');
+    await captureScreenshot(keyboardOverlay, '08-keyboard-capture-overlay.png');
     await keyboardOverlay.keyboard.press('Enter').catch((error) => {
       if (!/closed/.test(error.message)) throw error;
     });
     await keyboardCapturePromise;
     const keyboardCaptureResult = await page.evaluate(() => window.keyboardCaptureTestResult);
     assert.equal(keyboardCaptureResult.ok, true, JSON.stringify(keyboardCaptureResult));
-    await page.waitForFunction(
-      () => document.querySelector('#source-text').value.includes('TypeError'),
-      undefined,
-      { timeout: OCR_UI_TIMEOUT_MS },
-    );
+    assert.notEqual(keyboardCaptureResult.cancelled, true, 'Keyboard capture must complete, not cancel');
+    await page.waitForFunction(() => document.querySelector('#status-text').textContent === '文字识别完成');
+    const keyboardRecognized = await page.locator('#source-text').inputValue();
+    keyboardCaptureDiagnostics.sourceText = keyboardRecognized;
+    assert.match(keyboardRecognized, /TypeError/);
+    assert.match(keyboardRecognized, /MODULE_NOT_FOUND/);
     await captureScreenshot(page, '06-captured-fixture.png');
-    checks.push('Real desktop drag selection crops a synthetic error window and completes offline OCR');
+    checks.push('Real desktop drag and keyboard selection include the synthetic error fixture and complete offline OCR');
 
     const failedCaptureWindow = app.waitForEvent('window');
     const failedCapturePromise = page.evaluate(() => window.screenLingo.captureScreen());
@@ -469,10 +496,40 @@ async function run() {
 
     assert.deepEqual(errors, []);
     fs.rmSync(path.join(artifactDir, 'failure.json'), { force: true });
-    fs.writeFileSync(path.join(artifactDir, 'report.json'), JSON.stringify({ appInfo, checks, errors, recognized }, null, 2));
+    fs.writeFileSync(path.join(artifactDir, 'report.json'), JSON.stringify({ appInfo, checks, errors, recognized, keyboardCaptureDiagnostics }, null, 2));
     console.log(JSON.stringify({ status: 'PASS', artifactDir, checks }, null, 2));
   } catch (error) {
-    fs.writeFileSync(path.join(artifactDir, 'failure.json'), JSON.stringify({ checks, errors, message: error.message, stack: error.stack }, null, 2));
+    const failure = { checks, errors, keyboardCaptureDiagnostics, message: error.message, stack: error.stack };
+    console.error(JSON.stringify({ status: 'FAIL', ...failure }, null, 2));
+    const writeFailure = () => {
+      try {
+        fs.writeFileSync(path.join(artifactDir, 'failure.json'), JSON.stringify(failure, null, 2));
+      } catch (diagnosticError) {
+        console.error(`Could not save failure diagnostics: ${diagnosticError.message}`);
+      }
+    };
+    writeFailure();
+    let pageState = null;
+    if (page) {
+      let diagnosticTimer;
+      try {
+        pageState = await Promise.race([
+          page.evaluate(() => ({
+            sourceText: document.querySelector('#source-text')?.value || '',
+            status: document.querySelector('#status-text')?.textContent || '',
+            resultError: document.querySelector('#result-error')?.textContent || '',
+            toast: document.querySelector('#toast')?.textContent || ''
+          })).catch(() => null),
+          new Promise((resolve) => { diagnosticTimer = setTimeout(() => resolve(null), 3000); })
+        ]);
+      } finally {
+        clearTimeout(diagnosticTimer);
+      }
+      await page.screenshot({ path: path.join(artifactDir, 'failure-main.png'), animations: 'disabled', timeout: 3000 }).catch(() => {});
+    }
+    failure.pageState = pageState;
+    writeFailure();
+    console.error(JSON.stringify({ status: 'FAIL_DIAGNOSTICS', pageState }, null, 2));
     throw error;
   } finally {
     if (app) await app.close();
