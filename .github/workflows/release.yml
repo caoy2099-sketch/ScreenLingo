@@ -43,17 +43,84 @@ jobs:
             throw "Tag '$env:GITHUB_REF_NAME' does not match package version '$packageVersion'. Expected '$expectedTag'."
           }
 
-      - name: Check and test
-        run: |
-          npm run check
-          npm test
-          npm run release:check
-          npm run test:e2e
+      - name: Check JavaScript syntax
+        run: npm run check
 
-      - name: Build release artifacts
+      - name: Run unit tests
+        run: npm test
+
+      - name: Check release readiness
+        run: npm run release:check
+
+      - name: Run development desktop tests
+        id: development_tests
+        run: npm run test:e2e
+
+      - name: Upload development E2E diagnostics
+        if: failure() && steps.development_tests.conclusion == 'failure'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-development-e2e-diagnostics
+          path: |
+            artifacts/development/failure.json
+            artifacts/development/*.png
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Build unpacked Windows application
+        run: npm run pack
+
+      - name: Verify unpacked application
+        shell: pwsh
         run: |
-          npm run pack
-          npm run dist -- --publish never
+          $appPath = 'dist\win-unpacked\截译 ScreenLingo.exe'
+          $modelPath = 'dist\win-unpacked\resources\tessdata\eng.traineddata.gz'
+          if (-not (Test-Path -LiteralPath $appPath -PathType Leaf)) {
+            throw "Packaged application was not created at $appPath"
+          }
+          if (-not (Test-Path -LiteralPath $modelPath -PathType Leaf)) {
+            throw "Bundled OCR model was not created at $modelPath"
+          }
+
+      - name: Run packaged desktop tests
+        id: packaged_tests
+        shell: pwsh
+        env:
+          SCREENLINGO_EXE: dist\win-unpacked\截译 ScreenLingo.exe
+        run: npm run test:e2e
+
+      - name: Upload packaged E2E diagnostics
+        if: failure() && steps.packaged_tests.conclusion == 'failure'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-packaged-e2e-diagnostics
+          path: |
+            artifacts/packaged/failure.json
+            artifacts/packaged/*.png
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Build portable Windows executable
+        run: npm run dist -- --publish never
+
+      - name: Run portable application test
+        id: portable_tests
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          $env:SCREENLINGO_EXE = "dist\ScreenLingo-$version-x64.exe"
+          node tests/e2e/portable.cjs
+
+      - name: Upload portable E2E diagnostics
+        if: failure() && steps.portable_tests.conclusion == 'failure'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-portable-e2e-diagnostics
+          path: |
+            artifacts/portable/failure.json
+            artifacts/portable/*.png
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Prepare release assets
         shell: pwsh
@@ -66,6 +133,7 @@ jobs:
           $portableAsset = Join-Path $assetsDirectory (Split-Path -Leaf $portable)
           $zipAsset = Join-Path $assetsDirectory "ScreenLingo-$version-win-x64.zip"
           $checksums = Join-Path $assetsDirectory 'SHA256SUMS.txt'
+          $releaseNotes = Join-Path $assetsDirectory 'release-notes.md'
 
           if (-not (Test-Path -LiteralPath $portable -PathType Leaf)) {
             throw "Portable executable was not created at $portable"
@@ -80,6 +148,7 @@ jobs:
           New-Item -ItemType Directory -Path $assetsDirectory | Out-Null
           Copy-Item -LiteralPath $portable -Destination $portableAsset
           Compress-Archive -Path $unpacked -DestinationPath $zipAsset -CompressionLevel Optimal
+          Copy-Item -LiteralPath 'docs\releases\v0.1.0.md' -Destination $releaseNotes
           $assets = @($portableAsset, $zipAsset)
           $lines = foreach ($asset in $assets) {
             $hash = (Get-FileHash -LiteralPath $asset -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -135,8 +204,9 @@ jobs:
           portable="release-assets/ScreenLingo-${version}-x64.exe"
           zip="release-assets/ScreenLingo-${version}-win-x64.zip"
           checksums="release-assets/SHA256SUMS.txt"
+          releaseNotes="release-assets/release-notes.md"
 
-          for asset in "$portable" "$zip" "$checksums"; do
+          for asset in "$portable" "$zip" "$checksums" "$releaseNotes"; do
             if [[ ! -f "$asset" ]]; then
               echo "Missing release asset: $asset" >&2
               exit 1
@@ -147,11 +217,9 @@ jobs:
             release create "$GITHUB_REF_NAME"
             --repo "$GH_REPO"
             --title "ScreenLingo $GITHUB_REF_NAME"
-            --generate-notes
+            --notes-file "$releaseNotes"
+            --latest
             --verify-tag
           )
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
-            arguments+=(--prerelease)
-          fi
           arguments+=("$portable" "$zip" "$checksums")
           gh "${arguments[@]}"

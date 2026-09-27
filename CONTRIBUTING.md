@@ -60,4 +60,4 @@ npm run dist       # 生成单文件便携版
 
 ## 发布
 
-维护者在发布前应更新版本号和 `CHANGELOG.md`，完成本地桌面端验证，然后推送与 `package.json` 版本完全一致的标签，例如 `v0.1.0`。GitHub Actions 会重新测试并生成便携版、解压版 ZIP 与 SHA-256 校验文件。
+维护者在发布前应更新版本号和 `CHANGELOG.md`，完成本地桌面端验证，然后推送与 `package.json` 版本完全一致的标签，例如 `v0.1.0`。GitHub Actions 会重新测试并生成以下 Release 文件：`ScreenLingo-<版本>-x64.exe`、`ScreenLingo-<版本>-win-x64.zip` 和 `SHA256SUMS.txt`。发布完成后，请检查 Release 页面中的下载链接与校验文件，再同步更新 README 中的版本链接。
