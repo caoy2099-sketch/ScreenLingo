@@ -18,6 +18,12 @@ Download the [latest Release](https://github.com/caoy2099-sketch/ScreenLingo/rel
 
 The executable is currently unsigned. Windows SmartScreen may show an “Unknown publisher” warning on first launch. Download builds only from this repository's Releases page.
 
+## Android mobile preview
+
+The Android preview turns “share a screenshot or text → local OCR → select words or sentences → translate, ask, copy, or search” into a mobile workflow. It supports Photo Picker, system sharing, compatible text-selection menus, and explicit paste. A screenshot is sent to a vision model only when you actively enable the attachment in a question.
+
+Version `0.1.0-alpha.1` is for personal preview and has not completed compatibility testing across real Android devices. Default translation uses Bing's web endpoint; Android's current VPN or proxy routing is respected, and the app does not scan v2rayN on a computer. See the [Android mobile guide](mobile/README.md) for installation, privacy boundaries, build verification, and limitations.
+
 ## Start in three steps
 
 1. Download and start the app. Choose a translation provider in Settings if needed.

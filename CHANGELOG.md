@@ -6,8 +6,16 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Added
+
+- Android `0.1.0-alpha.1` source and local experience build: share text or screenshots, import a selected image, on-device Chinese/English OCR, word/sentence selection, translation, and optional model questions.
+- Explicit text/image sharing controls, encrypted Android model settings, bounded cancellable requests, and mobile regression tests. Android device acceptance remains pending; this is separate from the Windows stable release.
+- Added user-facing Android installation, build, release, source-research, and third-party license notes. The debug APK is a personal preview artifact and is not a store-signed release.
+
 ### Fixed
 
+- Mobile default Bing now starts from the canonical `www.bing.com` host and Chinese locale path, avoiding the current `cn.bing.com` redirect that would otherwise be rejected by the no-redirect policy.
+- Mobile OCR no longer fails just because an imported image cannot be compressed below the optional 2 MB vision-upload limit; text extraction remains available and the attachment checkbox explains when cropping is needed.
 - Keep mocked OCR and translation timeout tests alive until their assertions finish on Node.js 22, matching the lifetime of real worker threads and network requests.
 - Make the desktop E2E keyboard selection cover the synthetic error image on smaller displays and retain OCR assertions for both error identifiers.
 - Attach failure diagnostics and synthetic test screenshots to failed desktop CI runs, excluding isolated browser profiles.
