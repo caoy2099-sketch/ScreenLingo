@@ -355,6 +355,8 @@ private fun SelectionCard(state: MobileState, onAction: (MobileAction) -> Unit) 
 @Composable
 private fun SelectedContent(state: MobileState, onAction: (MobileAction) -> Unit, onAsk: () -> Unit) {
   val canUseSelection = state.selection.isNotBlank() && state.busy == null
+  val canAsk = state.busy == null && !state.settingsBusy &&
+    (state.selection.isNotBlank() || state.imageAttachmentAvailable)
   SectionCard {
     Text("已选 ${state.selected.size} / ${state.pieces.size} 个片段", style = MaterialTheme.typography.titleMedium)
     if (state.selection.isBlank()) {
@@ -367,10 +369,10 @@ private fun SelectedContent(state: MobileState, onAction: (MobileAction) -> Unit
       UtilityAction("分享", Icons.Outlined.Share, canUseSelection) { onAction(MobileAction.Share) }
       UtilityAction("查找", Icons.Outlined.Search, canUseSelection) { onAction(MobileAction.Search) }
     }
-    OutlinedButton(onClick = onAsk, enabled = canUseSelection && !state.settingsBusy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+    OutlinedButton(onClick = onAsk, enabled = canAsk, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
       Icon(Icons.Outlined.Forum, null, Modifier.size(20.dp))
       Spacer(Modifier.width(8.dp))
-      Text("问一问这段内容")
+      Text(if (state.selection.isNotBlank()) "问一问这段内容" else "问一问当前截图")
     }
     TextButton(onClick = { onAction(MobileAction.ClearContent) }, enabled = state.busy == null, modifier = Modifier.heightIn(min = 48.dp)) { Text("清除本次内容") }
   }
@@ -548,7 +550,14 @@ private fun AskDialog(state: MobileState, onDismiss: () -> Unit, onAction: (Mobi
         }
       }
     },
-    confirmButton = { TextButton(onClick = { onAction(MobileAction.Ask(question.trim(), includeImage)) }, enabled = question.isNotBlank() && !questionTooLong && configured && state.busy == null && !state.settingsBusy, modifier = Modifier.heightIn(min = 48.dp)) { Text("发送问题") } },
+    confirmButton = {
+      val hasMaterial = state.selection.isNotBlank() || (includeImage && state.imageAttachmentAvailable)
+      TextButton(
+        onClick = { onAction(MobileAction.Ask(question.trim(), includeImage)) },
+        enabled = question.isNotBlank() && !questionTooLong && hasMaterial && configured && state.busy == null && !state.settingsBusy,
+        modifier = Modifier.heightIn(min = 48.dp),
+      ) { Text("发送问题") }
+    },
     dismissButton = { TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text("取消") } },
   )
 }
