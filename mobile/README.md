@@ -2,7 +2,7 @@
 
 把截图里的文字取出来，轻点选中需要的词句，再翻译、提问、复制或分享。适合英文 App 提示、报错截图、外语社区和无法复制的内容。
 
-支持 **Android 8.0 及以上**。当前版本为 `0.1.0-alpha.1`，尚未公开发布 Android 下载版本，也尚未完成真机兼容性验收。
+支持 **Android 8.0 及以上**。当前版本为 `0.1.0-alpha.1`，可从 [GitHub Android alpha Release](https://github.com/caoy2099-sketch/ScreenLingo/releases/tag/mobile-v0.1.0-alpha.1) 下载；这是 debug 签名个人体验包，尚未完成不同品牌手机的真机兼容性验收。
 
 ## 怎么用
 

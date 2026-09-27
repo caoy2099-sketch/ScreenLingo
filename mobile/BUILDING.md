@@ -51,4 +51,4 @@ JVM 测试覆盖分段与标点保留、URL/密钥验证、请求结构、图片
 
 项目代码遵循根目录 MIT 许可证；Google ML Kit SDK/模型和依赖各自遵循其条款，详见 [第三方声明](THIRD_PARTY_NOTICES.md)。实际阅读的参考代码及独立实现取舍见 [源码研究记录](../docs/mobile/RESEARCH.md)。
 
-公开 Android Release 前还需完成设备验收、正式签名和完整依赖许可证分发核对。当前不修改 Windows 稳定版的下载入口。
+正式商店发行前还需完成设备验收、正式签名和完整依赖许可证分发核对。当前 alpha Release 使用 debug 签名，Windows 稳定版下载入口保持独立。
