@@ -517,7 +517,7 @@ private fun AskDialog(state: MobileState, onDismiss: () -> Unit, onAction: (Mobi
     title = { Text("问一问") },
     text = {
       Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("问题和所选文字将发送给你在设置中连接的模型。", style = MaterialTheme.typography.bodyMedium)
+        Text("问题会发送给你在设置中连接的模型；如果有选中文字，也会一并发送。", style = MaterialTheme.typography.bodyMedium)
         OutlinedTextField(
           value = question,
           onValueChange = { question = it },
