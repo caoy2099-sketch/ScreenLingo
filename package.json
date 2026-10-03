@@ -21,7 +21,7 @@
   "dependencies": {
     "@tesseract.js-data/eng": "^1.0.0",
     "image-size": "2.0.4",
-    "lucide": "1.41.0",
+    "lucide": "1.49.0",
     "tesseract.js": "7.0.0"
   },
   "devDependencies": {
