@@ -501,15 +501,31 @@ async function run() {
       await app.evaluate(({ clipboard }) => {
         clipboard.writeText('TypeError: Cannot read properties of undefined (reading "name")');
       });
-      const quickWindowPromise = app.waitForEvent('window');
-      await app.evaluate(({ app: electronApp }) => {
-        electronApp.emit('second-instance', {}, [
-          process.execPath,
-          'launch.cjs',
-          '--quick-action=clipboard'
-        ], process.cwd(), {});
+      const dispatch = await app.evaluate(async ({ app: electronApp, BrowserWindow }) => {
+        const path = require('node:path');
+        const expectedMainPath = path.join(electronApp.getAppPath(), 'src', 'main', 'main.js');
+        const mainPath = require.cache[expectedMainPath]
+          ? expectedMainPath
+          : Object.keys(require.cache).find((file) => file.endsWith(path.join('src', 'main', 'main.js')));
+        if (!mainPath) throw new Error('Loaded main process module was not found.');
+        const main = require(mainPath);
+        const before = BrowserWindow.getAllWindows().map((window) => window.webContents.getURL());
+        const parsedAction = main.parseQuickAction(['--quick-action=clipboard']);
+        const listenerCount = electronApp.listenerCount('second-instance');
+        const result = await main.handleQuickAction('clipboard');
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        const after = BrowserWindow.getAllWindows().map((window) => ({
+          url: window.webContents.getURL(),
+          visible: window.isVisible(),
+          destroyed: window.isDestroyed()
+        }));
+        return { before, after, parsedAction, listenerCount, result };
       });
-      const quickPanel = await quickWindowPromise;
+      assert.equal(dispatch.parsedAction, 'clipboard', JSON.stringify(dispatch));
+      assert.ok(dispatch.listenerCount >= 1, JSON.stringify(dispatch));
+      assert.equal(dispatch.result?.ok, true, JSON.stringify(dispatch));
+      const quickPanel = app.windows().find((window) => window.url().includes('/quick.html'));
+      assert.ok(quickPanel, JSON.stringify(dispatch));
       quickPanel.on('pageerror', (error) => errors.push(error.message));
       await quickPanel.waitForFunction(() =>
         document.querySelector('#quick-translation')?.textContent.includes('类型错误'), null, { timeout: 20000 });
@@ -520,7 +536,7 @@ async function run() {
         if (!/closed/i.test(error.message)) throw error;
       });
       await page.waitForFunction(() => document.querySelector('#translation-output').textContent.includes('类型错误'));
-      checks.push('Second-instance quick action opens the compact clipboard panel with translated text');
+      checks.push('Quick-action dispatch opens the compact clipboard panel with translated text');
     }
 
     await page.locator('#settings-open').click();
