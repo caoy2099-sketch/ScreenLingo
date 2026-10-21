@@ -4,7 +4,6 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
-const { spawn } = require('node:child_process');
 const { _electron: electron } = require('playwright-core');
 
 const root = path.resolve(__dirname, '..', '..');
@@ -503,15 +502,13 @@ async function run() {
         clipboard.writeText('TypeError: Cannot read properties of undefined (reading "name")');
       });
       const quickWindowPromise = app.waitForEvent('window');
-      const secondInstance = spawn(require('electron'), [
-        path.join(__dirname, 'launch.cjs'),
-        '--quick-action=clipboard'
-      ], {
-        env,
-        stdio: 'ignore',
-        windowsHide: true
+      await app.evaluate(({ app: electronApp }) => {
+        electronApp.emit('second-instance', {}, [
+          process.execPath,
+          'launch.cjs',
+          '--quick-action=clipboard'
+        ], process.cwd(), {});
       });
-      secondInstance.unref();
       const quickPanel = await quickWindowPromise;
       quickPanel.on('pageerror', (error) => errors.push(error.message));
       await quickPanel.waitForFunction(() =>
