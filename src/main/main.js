@@ -361,7 +361,7 @@ async function runCaptureWorkflow({ presentation = 'workspace' } = {}) {
 async function runClipboardWorkflow({ presentation = 'workspace' } = {}) {
   const usePanel = presentation === 'panel';
   const cursor = usePanel ? screen.getCursorScreenPoint() : null;
-  const text = clipboard.readText('clipboard').trim();
+  const text = String(clipboard.readText('clipboard') ?? '').trim();
   if (!text) {
     const message = '剪贴板里没有文字。请先复制报错，再按剪贴板翻译热键。';
     if (usePanel) {
@@ -1002,5 +1002,6 @@ module.exports = {
   MAX_OPEN_IMAGE_BYTES,
   handleQuickAction,
   parseQuickAction,
-  providerLabel
+  providerLabel,
+  runTextWorkflow
 };

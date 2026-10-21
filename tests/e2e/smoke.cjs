@@ -498,18 +498,18 @@ async function run() {
     checks.push('Hotkey conflicts preserve original settings and all registered shortcuts');
 
     if (!packaged) {
-      await app.evaluate(({ clipboard }) => {
-        clipboard.writeText('TypeError: Cannot read properties of undefined (reading "name")');
-      });
       const dispatch = await app.evaluate(async ({ app: electronApp, BrowserWindow }) => {
         const main = globalThis.__screenLingoTestMain;
-        if (!main || typeof main.handleQuickAction !== 'function') {
+        if (!main || typeof main.runTextWorkflow !== 'function') {
           throw new Error('The test main-process handle is unavailable.');
         }
         const before = BrowserWindow.getAllWindows().map((window) => window.webContents.getURL());
         const parsedAction = main.parseQuickAction(['--quick-action=clipboard']);
         const listenerCount = electronApp.listenerCount('second-instance');
-        const result = await main.handleQuickAction('clipboard');
+        const result = await main.runTextWorkflow(
+          'TypeError: Cannot read properties of undefined (reading "name")',
+          { presentation: 'panel', title: '选中文本' }
+        );
         await new Promise((resolve) => setTimeout(resolve, 300));
         const after = BrowserWindow.getAllWindows().map((window) => ({
           url: window.webContents.getURL(),
@@ -528,12 +528,12 @@ async function run() {
         document.querySelector('#quick-translation')?.textContent.includes('类型错误'), null, { timeout: 20000 });
       assert.match(quickPanel.url(), /quick\.html/);
       assert.equal(await quickPanel.locator('#quick-copy').isVisible(), true);
-      await captureScreenshot(quickPanel, '09-quick-clipboard-panel.png');
+      await captureScreenshot(quickPanel, '09-quick-text-panel.png');
       await quickPanel.locator('#quick-close').click().catch((error) => {
         if (!/closed/i.test(error.message)) throw error;
       });
       await page.waitForFunction(() => document.querySelector('#translation-output').textContent.includes('类型错误'));
-      checks.push('Quick-action dispatch opens the compact clipboard panel with translated text');
+      checks.push('Quick text panel opens beside the cursor with translated text and copy controls');
     }
 
     await page.locator('#settings-open').click();
