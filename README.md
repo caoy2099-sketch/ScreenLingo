@@ -10,13 +10,13 @@ Windows 上的本地截图 OCR、报错翻译和截图提问工具，适合把�
 
 ## 下载
 
-直接下载 [最新 Release](https://github.com/caoy2099-sketch/ScreenLingo/releases/latest)，或下载当前版本 v0.1.0：
+直接下载 [最新 Release](https://github.com/caoy2099-sketch/ScreenLingo/releases/latest)，或下载当前版本 v0.2.0：
 
 | 文件 | 推荐场景 |
 | --- | --- |
-| [ScreenLingo-0.1.0-win-x64.zip](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.1.0/ScreenLingo-0.1.0-win-x64.zip) | 推荐。解压后运行 `win-unpacked/截译 ScreenLingo.exe`，请保留整个文件夹。 |
-| [ScreenLingo-0.1.0-x64.exe](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.1.0/ScreenLingo-0.1.0-x64.exe) | 便携单文件。每次启动会先解压，启动速度较慢。 |
-| [SHA256SUMS.txt](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.1.0/SHA256SUMS.txt) | 校验下载文件完整性。 |
+| [ScreenLingo-0.2.0-win-x64.zip](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.2.0/ScreenLingo-0.2.0-win-x64.zip) | 推荐。解压后运行 `win-unpacked/截译 ScreenLingo.exe`，请保留整个文件夹。 |
+| [ScreenLingo-0.2.0-x64.exe](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.2.0/ScreenLingo-0.2.0-x64.exe) | 便携单文件。每次启动会先解压，启动速度较慢。 |
+| [SHA256SUMS.txt](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.2.0/SHA256SUMS.txt) | 校验下载文件完整性。 |
 
 程序暂未进行商业代码签名，首次启动时 Windows SmartScreen 可能显示“未知发布者”。请只从本仓库的 Releases 下载。
 

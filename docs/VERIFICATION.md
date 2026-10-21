@@ -2,6 +2,14 @@
 
 日期：2026-09-23。环境：Windows 11 x64，Electron 44.2.0。
 
+## v0.2.0 发布验证（2026-10-22）
+
+- `npm run check` 通过；`npm test` 报告 127 项自动化测试全部通过；`npm run release:check` 通过。
+- Windows GitHub Actions CI 通过完整 Electron 桌面流程，包含新增快速文本面板；随后成功构建解包版并通过打包运行时检查。
+- `npm run pack` 通过，已生成包含浮层、Windows 集成和 `selection-reader.ps1` 的 `dist/win-unpacked`。
+- `npm run dist -- --publish never` 通过，生成 `dist/ScreenLingo-0.2.0-x64.exe`；文件与产品版本均为 `0.2.0`，资源中的 `package.json` 版本也一致。
+- 版本号已同步到 `package.json`、`package-lock.json`、README、CHANGELOG 和发布说明；Release 工作流使用 `docs/releases/v0.2.0.md` 作为发布正文。
+
 ## 2026-10-20 Windows 集成开发验证
 
 - `npm run check` 通过；`npm test` 报告 127 项自动化测试全部通过，覆盖选区 DIP 坐标回传、浮层定位/翻转/高度收敛、关闭后晚到结果不再重开、选中文本读取解析、Windows 右键菜单命令构造与 `HKCU` 边界，以及原有 OCR、翻译、网络、设置和发布工具回归。
@@ -10,7 +18,7 @@
 - 在当前用户下实际执行了右键菜单安装、`reg query` 核对和移除：菜单标签、图标路径和 `--quick-action=capture` 命令正确，移除后四个 `HKCU\Software\Classes` 键均不存在。
 - `npm run pack` 通过；`dist/win-unpacked/resources/app.asar` 包含浮层与 Windows 集成模块，`selection-reader.ps1` 已复制到 `resources/` 且与源码 SHA-256 一致。
 - 已将解包构建安装到当前用户的 `%LOCALAPPDATA%\Programs\ScreenLingo\0.1.0`，并实际启动安装版；主窗口正常运行，开始菜单快捷方式和四个 `HKCU` 右键菜单键均已建立。
-- 本次没有重跑完整 Electron E2E。真实桌面上的截图覆盖交互、冷启动右键调用、多显示器缩放和更多控件的 UI Automation 兼容性仍需在交互式桌面上复验。
+- 随后 GitHub Actions 的 Windows CI 已运行完整 Electron E2E，并包含新增快速文本面板路径；真实桌面上的截图覆盖交互、冷启动右键调用、多显示器缩放和更多控件的 UI Automation 兼容性仍需在交互式桌面上复验。
 
 ## 已通过
 

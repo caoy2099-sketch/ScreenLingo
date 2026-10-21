@@ -148,7 +148,7 @@ jobs:
           New-Item -ItemType Directory -Path $assetsDirectory | Out-Null
           Copy-Item -LiteralPath $portable -Destination $portableAsset
           Compress-Archive -Path $unpacked -DestinationPath $zipAsset -CompressionLevel Optimal
-          Copy-Item -LiteralPath 'docs\releases\v0.1.0.md' -Destination $releaseNotes
+          Copy-Item -LiteralPath 'docs\releases\v0.2.0.md' -Destination $releaseNotes
           $assets = @($portableAsset, $zipAsset)
           $lines = foreach ($asset in $assets) {
             $hash = (Get-FileHash -LiteralPath $asset -Algorithm SHA256).Hash.ToLowerInvariant()

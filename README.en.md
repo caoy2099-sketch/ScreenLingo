@@ -10,13 +10,13 @@ A Windows utility for local screenshot OCR, developer-error translation, and vis
 
 ## Download
 
-Download the [latest Release](https://github.com/caoy2099-sketch/ScreenLingo/releases/latest), or download the current v0.1.0 assets directly:
+Download the [latest Release](https://github.com/caoy2099-sketch/ScreenLingo/releases/latest), or download the current v0.2.0 assets directly:
 
 | File | Recommended use |
 | --- | --- |
-| [ScreenLingo-0.1.0-win-x64.zip](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.1.0/ScreenLingo-0.1.0-win-x64.zip) | Recommended. Extract the archive and run `win-unpacked/截译 ScreenLingo.exe`; keep the folder together. |
-| [ScreenLingo-0.1.0-x64.exe](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.1.0/ScreenLingo-0.1.0-x64.exe) | Single-file portable build. It extracts itself on every launch, so startup is slower. |
-| [SHA256SUMS.txt](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.1.0/SHA256SUMS.txt) | Verify downloaded files. |
+| [ScreenLingo-0.2.0-win-x64.zip](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.2.0/ScreenLingo-0.2.0-win-x64.zip) | Recommended. Extract the archive and run `win-unpacked/截译 ScreenLingo.exe`; keep the folder together. |
+| [ScreenLingo-0.2.0-x64.exe](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.2.0/ScreenLingo-0.2.0-x64.exe) | Single-file portable build. It extracts itself on every launch, so startup is slower. |
+| [SHA256SUMS.txt](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.2.0/SHA256SUMS.txt) | Verify downloaded files. |
 
 The executable is currently unsigned. Windows SmartScreen may show an “Unknown publisher” warning on first launch. Download builds only from this repository's Releases page.
 

@@ -1,6 +1,6 @@
 # ScreenLingo
 
-**Version:** 0.1.0 | **Port:** N/A (Windows desktop app) | **Stack:** Electron 44, Node.js, vanilla HTML/CSS/JavaScript, Tesseract.js
+**Version:** 0.2.0 | **Port:** N/A (Windows desktop app) | **Stack:** Electron 44, Node.js, vanilla HTML/CSS/JavaScript, Tesseract.js
 
 ## What
 

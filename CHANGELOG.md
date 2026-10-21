@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-22
+
 ### Added
 
 - Lightweight Windows overlays: screenshot translations now cover the original capture region, while selected-text and clipboard translations appear in a compact panel beside the cursor with copy and workbench actions.
@@ -16,6 +18,13 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Android `0.1.0-alpha.1` source and local experience build: share text or screenshots, import a selected image, on-device Chinese/English OCR, word/sentence selection, translation, and optional model questions.
 - Explicit text/image sharing controls, encrypted Android model settings, bounded cancellable requests, and mobile regression tests. Android device acceptance remains pending; this is separate from the Windows stable release.
 - Added user-facing Android installation, build, release, source-research, and third-party license notes. The debug APK is a personal preview artifact and is not a store-signed release.
+
+### Changed
+
+- Screenshot translation from the global shortcut, tray, or Explorer menu now presents the translated result over the captured region instead of bringing the workbench forward.
+- Clipboard and selected-text translations now open a compact cursor-side panel; the in-app workbench keeps its existing long-form workflow.
+- Enabling the current-user Explorer menu is now the default; it can be disabled at any time from Settings and is removed on the next startup when disabled.
+- Updated the release version and release-note source to `0.2.0`.
 
 ### Security
 
@@ -30,6 +39,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Keep mocked OCR and translation timeout tests alive until their assertions finish on Node.js 22, matching the lifetime of real worker threads and network requests.
 - Make the desktop E2E keyboard selection cover the synthetic error image on smaller displays and retain OCR assertions for both error identifiers.
 - Attach failure diagnostics and synthetic test screenshots to failed desktop CI runs, excluding isolated browser profiles.
+- Normalize clipboard reads so an unavailable or unexpected Windows clipboard value produces the normal empty-content message instead of an exception.
+
+### Tests
+
+- 127 Node test-runner checks pass, including quick-result geometry, late-result suppression, selected-text parsing/encoding, Windows shell menu command construction, and the existing OCR, translation, network, settings, and release-tool suites.
+- Windows GitHub Actions CI passes the full development Electron E2E suite, including the new quick text panel, plus the unpacked build check.
 
 ## [0.1.0] - 2026-09-26
 

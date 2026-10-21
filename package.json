@@ -1,6 +1,6 @@
 {
   "name": "screenlingo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Windows screenshot OCR, Chinese translation, and visual troubleshooting for developer errors.",
   "main": "src/main/main.js",
   "author": "ScreenLingo contributors",
