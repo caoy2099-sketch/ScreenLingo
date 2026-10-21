@@ -502,13 +502,10 @@ async function run() {
         clipboard.writeText('TypeError: Cannot read properties of undefined (reading "name")');
       });
       const dispatch = await app.evaluate(async ({ app: electronApp, BrowserWindow }) => {
-        const path = require('node:path');
-        const expectedMainPath = path.join(electronApp.getAppPath(), 'src', 'main', 'main.js');
-        const mainPath = require.cache[expectedMainPath]
-          ? expectedMainPath
-          : Object.keys(require.cache).find((file) => file.endsWith(path.join('src', 'main', 'main.js')));
-        if (!mainPath) throw new Error('Loaded main process module was not found.');
-        const main = require(mainPath);
+        const main = globalThis.__screenLingoTestMain;
+        if (!main || typeof main.handleQuickAction !== 'function') {
+          throw new Error('The test main-process handle is unavailable.');
+        }
         const before = BrowserWindow.getAllWindows().map((window) => window.webContents.getURL());
         const parsedAction = main.parseQuickAction(['--quick-action=clipboard']);
         const listenerCount = electronApp.listenerCount('second-instance');
