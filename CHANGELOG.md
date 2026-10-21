@@ -8,9 +8,20 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Added
 
+- Lightweight Windows overlays: screenshot translations now cover the original capture region, while selected-text and clipboard translations appear in a compact panel beside the cursor with copy and workbench actions.
+- `Alt+Shift+X` selected-text translation through Windows UI Automation, with a tray-menu entry and an explicit clipboard fallback when the active control does not expose its selection.
+- Per-user Explorer context-menu entries for screenshot translation and clipboard translation on the desktop and folder backgrounds, plus a settings switch that installs or removes them under `HKCU` without administrator rights.
+- Window-launch quick actions (`--quick-action=capture|clipboard|selection`) and a second-instance handoff so a running app can be invoked from Windows without opening the workbench.
+- Windows integration documentation covering context-menu boundaries, registry locations, selected-text support, and overlay behavior.
 - Android `0.1.0-alpha.1` source and local experience build: share text or screenshots, import a selected image, on-device Chinese/English OCR, word/sentence selection, translation, and optional model questions.
 - Explicit text/image sharing controls, encrypted Android model settings, bounded cancellable requests, and mobile regression tests. Android device acceptance remains pending; this is separate from the Windows stable release.
 - Added user-facing Android installation, build, release, source-research, and third-party license notes. The debug APK is a personal preview artifact and is not a store-signed release.
+
+### Security
+
+- Quick result windows run with context isolation, sandboxing, and a dedicated preload that exposes only state display, copy, resize, close, workbench, and explicit clipboard-fallback actions; screenshots and OCR images are never sent to them.
+- Selected-text translation reads UI Automation text only after an explicit action, rejects password controls, and does not simulate copy or rewrite the clipboard.
+- Windows shell integration is limited to two Explorer verbs under the current user's `HKCU`, with no `HKLM`, service, startup-entry, or file-association changes.
 
 ### Fixed
 

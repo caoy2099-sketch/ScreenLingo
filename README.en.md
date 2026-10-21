@@ -2,7 +2,9 @@
 
 English | [简体中文](README.md)
 
-A Windows utility for local screenshot OCR, developer-error translation, and visual questions about the current screenshot.
+A Windows utility for local screenshot OCR, developer-error translation, and visual questions about the current screenshot. It also works as a lightweight Windows layer: translated screenshots cover the original selection, selected-text translations appear beside the cursor, and Explorer's context menu can start a capture.
+
+![Screenshot translation overlay](docs/assets/screenlingo-overlay.png)
 
 ![ScreenLingo home screen](docs/assets/screenlingo-home.png)
 
@@ -28,19 +30,31 @@ Version `0.1.0-alpha.1` is available as a personal preview package from the [And
 
 1. Download and start the app. Choose a translation provider in Settings if needed.
 2. In any window, press `Alt+Shift+S` and drag over the English error.
-3. Release the mouse and wait for local OCR and translation. Press `Esc` to cancel a selection.
+3. Release the mouse and wait for local OCR and translation. A compact overlay covers the captured region with the translation.
 
-You can also copy text and press `Alt+Shift+T` to translate the clipboard.
+You can also select text and press `Alt+Shift+X` to show a small translation panel beside the cursor, or copy text and press `Alt+Shift+T` to translate the clipboard.
+
+## Windows-native touches
+
+- **Translate in place**: a shortcut or context menu starts the capture, and the result covers the selection without bringing the main window forward. Copy the translation or open the full workbench from the overlay.
+- **Translate the selection**: `Alt+Shift+X` reads the active text selection through Windows UI Automation and anchors a compact panel beside the cursor. It does not simulate `Ctrl+C` or modify the clipboard.
+- **Start from a right-click**: right-click an empty area of the desktop or a folder and choose “截译 · 截屏翻译” or “截译 · 翻译剪贴板”. On Windows 11 these entries live under “Show more options”. The tray menu also offers “翻译选中文本”. The per-user entries are added by default and can be removed in Settings.
+- **Stay out of the way**: overlays skip the taskbar, flip or shift near screen edges, and close without reopening when a late result arrives.
+
+Windows does not expose a general API for adding items to every application's native text context menu. ScreenLingo avoids process injection, so selected-text translation uses the shortcut and tray entry. See [Windows integration](docs/WINDOWS_INTEGRATION.md) for boundaries, registry keys, and removal.
+
+![Selected text translation panel](docs/assets/screenlingo-selection-panel.png)
 
 ## Common shortcuts
 
 | Action | Default shortcut |
 | --- | --- |
 | Screenshot translation | `Alt+Shift+S` |
+| Translate selected text | `Alt+Shift+X` |
 | Translate clipboard | `Alt+Shift+T` |
 | Cancel screenshot selection | `Esc` |
 
-Shortcuts can be changed in Settings. Closing the main window keeps the app in the system tray by default; this behavior can be disabled in Settings.
+Shortcuts can be changed in Settings. Closing the main window keeps the app in the system tray by default; this behavior can be disabled in Settings. “Settings → Shortcuts & behavior → Windows desktop context menu” adds or removes the per-user Explorer entries without administrator rights.
 
 ## Visual questions
 
@@ -61,6 +75,8 @@ ScreenLingo does not start, stop, inspect, or modify v2rayN subscriptions or nod
 - OCR runs locally. The bundled model currently recognizes English only.
 - Standard translation sends recognized text only; a screenshot is sent only when you explicitly use Visual questions.
 - Screenshots and OCR results stay in memory by default and are not written to a history database.
+- Selected text is read locally through Windows UI Automation only after you press the shortcut or choose the tray action. Password fields are rejected, and the app does not simulate copy or modify the clipboard.
+- Explorer context-menu entries are written only under the current user's `HKCU`; disable the setting to remove them. The app does not register services, add startup entries, or change file associations.
 - API keys are encrypted with Windows secure storage. The app does not fall back to plaintext when secure storage is unavailable.
 - Bing and Google modes use web endpoints and may be affected by network conditions, rate limits, or provider changes. For a controlled service, configure an OpenAI-compatible endpoint you trust.
 - The default translation providers require a network connection. Fully offline use requires a local model.

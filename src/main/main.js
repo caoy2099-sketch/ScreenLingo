@@ -13,6 +13,7 @@ const {
   globalShortcut,
   ipcMain,
   nativeImage,
+  nativeTheme,
   safeStorage,
   screen,
   session
@@ -21,12 +22,16 @@ const { CaptureService } = require('./capture-service');
 const { inspectImageDataUrl } = require('./image-service');
 const { NetworkService } = require('./network-service');
 const { OcrCancelledError, OcrService, validateImageDataUrl } = require('./ocr-service');
-const { DEFAULT_SETTINGS, SettingsStore, normalizeSettingsPatch } = require('./settings-store');
-const { TranslationError, TranslationService } = require('./translation-service');
+const { QuickResultService, resolveQuickTheme } = require('./quick-result-service');
+const { SelectionService } = require('./selection-service');
+const { SettingsStore, normalizeSettingsPatch } = require('./settings-store');
+const { TranslationService } = require('./translation-service');
+const { WindowsShellIntegration } = require('./windows-shell-integration');
 
 const APP_NAME = '截译 ScreenLingo';
 const MAX_CLIPBOARD_TEXT_LENGTH = 60_000;
 const MAX_OPEN_IMAGE_BYTES = 20 * 1024 * 1024;
+const QUICK_ACTIONS = new Set(['capture', 'clipboard', 'selection']);
 const SUPPORTED_IMAGE_EXTENSIONS = new Map([
   ['.png', 'image/png'],
   ['.jpg', 'image/jpeg'],
@@ -42,6 +47,13 @@ let ocrService = null;
 let translationService = null;
 let networkService = null;
 let settingsStore = null;
+let quickResultService = null;
+let selectionService = null;
+let shellIntegration = null;
+let shellIntegrationDisabled = false;
+let appInitialized = false;
+let pendingQuickAction = parseQuickAction(process.argv);
+let suppressAutoShow = Boolean(pendingQuickAction);
 let quitting = false;
 let workflowRevision = 0;
 let workflowAbortController = null;
@@ -49,6 +61,35 @@ let lastImageDataUrl = '';
 let lastSourceText = '';
 let lastTranslation = '';
 let registeredHotkeys = [];
+let mainRendererReady = false;
+let pendingWorkflowUpdates = [];
+const MAX_PENDING_WORKFLOW_UPDATES = 200;
+
+function parseQuickAction(argv) {
+  if (!Array.isArray(argv)) return null;
+  for (const argument of argv) {
+    if (typeof argument !== 'string' || !argument.startsWith('--quick-action=')) continue;
+    const action = argument.slice('--quick-action='.length).trim().toLowerCase();
+    if (QUICK_ACTIONS.has(action)) return action;
+  }
+  return null;
+}
+
+function quickTheme() {
+  if (!settingsStore) return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+  return resolveQuickTheme(settingsStore.get().theme, nativeTheme.shouldUseDarkColors);
+}
+
+function getPublicSettings() {
+  return {
+    ...settingsStore.getPublic(),
+    integrationStatus: shellIntegration?.getStatus() || {
+      supported: process.platform === 'win32',
+      installed: false,
+      error: ''
+    }
+  };
+}
 
 function createTrayImage() {
   const image = nativeImage.createFromPath(path.join(__dirname, '..', 'assets', 'icon.png'));
@@ -67,7 +108,24 @@ function assertMainSender(event) {
 
 function sendWorkflowUpdate(payload) {
   if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (!mainRendererReady) {
+    pendingWorkflowUpdates.push(payload);
+    if (pendingWorkflowUpdates.length > MAX_PENDING_WORKFLOW_UPDATES) {
+      pendingWorkflowUpdates.splice(0, pendingWorkflowUpdates.length - MAX_PENDING_WORKFLOW_UPDATES);
+    }
+    return;
+  }
   mainWindow.webContents.send('workflow:update', payload);
+}
+
+function markMainRendererReady() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainRendererReady = true;
+  const queued = pendingWorkflowUpdates;
+  pendingWorkflowUpdates = [];
+  for (const update of queued) {
+    mainWindow.webContents.send('workflow:update', update);
+  }
 }
 
 function serializeError(error, fallbackTitle = '处理失败') {
@@ -83,10 +141,31 @@ function wait(milliseconds) {
 }
 
 function showMainWindow() {
+  quickResultService?.dismiss();
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
   mainWindow.focus();
+}
+
+function showMainWindowWhenReady() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.webContents.isLoading()) {
+    mainWindow.once('ready-to-show', showMainWindow);
+    return;
+  }
+  showMainWindow();
+}
+
+function openSettingsWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const navigate = () => mainWindow?.webContents.send('app:navigate', 'settings');
+  if (mainWindow.webContents.isLoading()) {
+    mainWindow.webContents.once('did-finish-load', navigate);
+  } else {
+    navigate();
+  }
+  showMainWindowWhenReady();
 }
 
 function beginWorkflow(phase, { reset = false } = {}) {
@@ -167,14 +246,20 @@ async function translateWithinWorkflow(text, task) {
   return translation;
 }
 
-async function processImage(imageDataUrl, existingTask = null) {
+async function processImage(imageDataUrl, existingTask = null, { presentation = 'workspace', anchor = null } = {}) {
   const task = existingTask || beginWorkflow('ocr', { reset: true });
+  const useOverlay = presentation === 'overlay' && Boolean(anchor);
+  if (useOverlay) {
+    quickResultService?.showCaptureLoading(anchor, { theme: quickTheme() });
+  }
   validateImageDataUrl(imageDataUrl);
   inspectImageDataUrl(imageDataUrl);
   lastImageDataUrl = imageDataUrl;
   lastSourceText = '';
   lastTranslation = '';
-  showMainWindow();
+  if (!useOverlay) {
+    showMainWindow();
+  }
   sendWorkflowUpdate({
     phase: 'ocr',
     reset: true,
@@ -187,6 +272,12 @@ async function processImage(imageDataUrl, existingTask = null) {
     signal: task.signal,
     onProgress(update) {
       if (!isCurrentWorkflow(task.revision, task.signal)) return;
+      if (useOverlay) {
+        quickResultService?.showCaptureProgress(anchor, {
+          progress: update.progress,
+          message: '正在本地识别屏幕文字'
+        });
+      }
       sendWorkflowUpdate({
         phase: 'ocr',
         progress: update.progress,
@@ -208,19 +299,37 @@ async function processImage(imageDataUrl, existingTask = null) {
     throw new Error('没有识别到文字。请缩小范围、提高截图清晰度，或在“识别文本”中手动粘贴。');
   }
   if (settingsStore.get().autoTranslate) {
-    await translateWithinWorkflow(result.text, task);
+    if (useOverlay) {
+      quickResultService?.showCaptureProgress(anchor, {
+        progress: 1,
+        message: '正在翻译'
+      });
+    }
+    const translation = await translateWithinWorkflow(result.text, task);
+    if (useOverlay && translation && isCurrentWorkflow(task.revision, task.signal)) {
+      quickResultService?.showCaptureResult(anchor, {
+        translation,
+        sourceText: lastSourceText,
+        providerLabel: providerLabel(settingsStore.get()),
+        theme: quickTheme()
+      });
+    }
   }
   return result;
 }
 
-async function runCaptureWorkflow() {
+async function runCaptureWorkflow({ presentation = 'workspace' } = {}) {
+  const allowOverlay = presentation === 'overlay' && settingsStore.get().autoTranslate !== false;
   const task = beginWorkflow('capturing');
+  quickResultService?.hideAll();
   const wasVisible = Boolean(mainWindow?.isVisible());
   if (wasVisible) {
     mainWindow.hide();
     await wait(140);
+    if (!isCurrentWorkflow(task.revision, task.signal)) return { ok: false, cancelled: true };
   }
 
+  let captureAnchor = null;
   try {
     const capture = await captureService.captureCurrentDisplay();
     if (!isCurrentWorkflow(task.revision, task.signal)) return { ok: false, cancelled: true };
@@ -229,42 +338,94 @@ async function runCaptureWorkflow() {
       sendWorkflowUpdate({ phase: lastSourceText ? 'ready' : 'idle', statusMessage: '已取消截图' });
       return { ok: true, cancelled: true };
     }
-    await processImage(capture.dataUrl, task);
+    captureAnchor = capture.screenRect;
+    await processImage(capture.dataUrl, task, allowOverlay
+      ? { presentation: 'overlay', anchor: captureAnchor }
+      : {});
     return { ok: true };
   } catch (error) {
     if (error instanceof OcrCancelledError || error?.code === 'ABORTED' || !isCurrentWorkflow(task.revision, task.signal)) {
       return { ok: false, cancelled: true };
     }
-    showMainWindow();
     const serialized = serializeError(error, '截图处理失败');
     sendWorkflowUpdate({ phase: 'error', error: serialized });
+    if (allowOverlay && captureAnchor) {
+      quickResultService?.showCaptureError(captureAnchor, serialized, { theme: quickTheme() });
+      return { ok: false, error: serialized.message };
+    }
+    showMainWindow();
     return { ok: false, error: serialized.message };
   }
 }
 
-async function runClipboardWorkflow() {
+async function runClipboardWorkflow({ presentation = 'workspace' } = {}) {
+  const usePanel = presentation === 'panel';
+  const cursor = usePanel ? screen.getCursorScreenPoint() : null;
   const text = clipboard.readText('clipboard').trim();
   if (!text) {
     const message = '剪贴板里没有文字。请先复制报错，再按剪贴板翻译热键。';
+    if (usePanel) {
+      quickResultService?.hideAll();
+      quickResultService?.resetSuppression();
+      cancelWorkflow();
+      quickResultService?.showPanelError(cursor, {
+        title: '剪贴板翻译',
+        message,
+        theme: quickTheme()
+      });
+      return { ok: false, error: message };
+    }
     showMainWindow();
     sendWorkflowUpdate({ phase: lastSourceText ? 'ready' : 'idle', error: { title: '没有可翻译内容', message } });
     return { ok: false, error: message };
   }
   if (text.length > MAX_CLIPBOARD_TEXT_LENGTH) {
     const message = `剪贴板文字过长，最多支持 ${MAX_CLIPBOARD_TEXT_LENGTH} 个字符。`;
+    if (usePanel) {
+      quickResultService?.hideAll();
+      quickResultService?.resetSuppression();
+      cancelWorkflow();
+      quickResultService?.showPanelError(cursor, {
+        title: '内容过长',
+        message,
+        theme: quickTheme()
+      });
+      return { ok: false, error: message };
+    }
     showMainWindow();
     sendWorkflowUpdate({ phase: 'error', error: { title: '内容过长', message } });
     return { ok: false, error: message };
   }
 
   const task = beginWorkflow('translating', { reset: true });
+  captureService?.cancel();
   lastImageDataUrl = '';
   lastSourceText = text;
   lastTranslation = '';
-  showMainWindow();
+  if (usePanel) {
+    quickResultService?.hideAll();
+    quickResultService?.showPanelLoading(cursor, {
+      title: '剪贴板翻译',
+      meta: '剪贴板',
+      message: '正在翻译剪贴板文字',
+      theme: quickTheme()
+    });
+  } else {
+    showMainWindow();
+  }
   sendWorkflowUpdate({ phase: 'translating', reset: true, imageDataUrl: '', sourceText: text, statusMessage: '正在翻译剪贴板文字' });
   try {
-    await translateWithinWorkflow(text, task);
+    const translation = await translateWithinWorkflow(text, task);
+    if (usePanel && translation) {
+      quickResultService?.showPanelResult(cursor, {
+        title: '剪贴板翻译',
+        meta: providerLabel(settingsStore.get()),
+        translation,
+        sourceText: text,
+        providerLabel: providerLabel(settingsStore.get()),
+        theme: quickTheme()
+      });
+    }
     return { ok: true };
   } catch (error) {
     if (error?.code === 'ABORTED' || !isCurrentWorkflow(task.revision, task.signal)) {
@@ -272,18 +433,74 @@ async function runClipboardWorkflow() {
     }
     const serialized = serializeError(error, '翻译失败');
     sendWorkflowUpdate({ phase: 'error', error: serialized });
+    if (usePanel) {
+      quickResultService?.showPanelError(cursor, {
+        title: '剪贴板翻译',
+        message: serialized.message,
+        theme: quickTheme()
+      });
+      return { ok: false, error: serialized.message };
+    }
     return { ok: false, error: serialized.message };
   }
 }
 
-async function runTextWorkflow(text) {
+async function runTextWorkflow(text, {
+  presentation = 'workspace',
+  title = '选中文本',
+  cursor = null,
+  allowClipboardFallback = false
+} = {}) {
+  const usePanel = presentation === 'panel';
+  const anchor = usePanel ? (cursor || screen.getCursorScreenPoint()) : null;
   const normalized = typeof text === 'string' ? text.trim() : '';
-  if (!normalized) return { ok: false, error: '没有可翻译的文字。' };
+  if (!normalized) {
+    const message = '没有可翻译的文字。';
+    if (usePanel) {
+      quickResultService?.resetSuppression();
+      quickResultService?.showPanelError(anchor, {
+        title,
+        message,
+        theme: quickTheme(),
+        allowClipboardFallback
+      });
+    }
+    return { ok: false, error: message };
+  }
+
   const task = beginWorkflow('translating');
+  captureService?.cancel();
   lastSourceText = normalized;
   lastTranslation = '';
+  if (usePanel) {
+    quickResultService?.hideAll();
+    quickResultService?.showPanelLoading(anchor, {
+      title,
+      meta: '已读取选区',
+      message: '正在翻译选中文本',
+      theme: quickTheme()
+    });
+    lastImageDataUrl = '';
+    sendWorkflowUpdate({
+      phase: 'translating',
+      reset: true,
+      imageDataUrl: '',
+      sourceText: normalized,
+      statusMessage: '正在翻译选中文本'
+    });
+  }
   try {
-    await translateWithinWorkflow(normalized, task);
+    const translation = await translateWithinWorkflow(normalized, task);
+    if (usePanel && translation) {
+      quickResultService?.showPanelResult(anchor, {
+        title,
+        meta: providerLabel(settingsStore.get()),
+        translation,
+        sourceText: normalized,
+        providerLabel: providerLabel(settingsStore.get()),
+        theme: quickTheme()
+      });
+    }
     return { ok: true };
   } catch (error) {
     if (error?.code === 'ABORTED' || !isCurrentWorkflow(task.revision, task.signal)) {
@@ -291,8 +508,50 @@ async function runTextWorkflow(text) {
     }
     const serialized = serializeError(error, '翻译失败');
     sendWorkflowUpdate({ phase: 'error', error: serialized });
+    if (usePanel) {
+      quickResultService?.showPanelError(anchor, {
+        title,
+        message: serialized.message,
+        theme: quickTheme(),
+        allowClipboardFallback
+      });
+      return { ok: false, error: serialized.message };
+    }
     return { ok: false, error: serialized.message };
   }
+}
+
+async function runSelectionWorkflow() {
+  quickResultService?.hideAll();
+  quickResultService?.resetSuppression();
+  cancelWorkflow();
+  const readRevision = workflowRevision;
+  const cursor = screen.getCursorScreenPoint();
+  const selected = await selectionService.readSelectedText();
+  if (readRevision !== workflowRevision) return { ok: false, cancelled: true };
+  if (!selected.ok) {
+    quickResultService?.showPanelError(cursor, {
+      title: '选中文本',
+      message: selected.error,
+      theme: quickTheme(),
+      allowClipboardFallback: true
+    });
+    return { ok: false, error: selected.error };
+  }
+  return runTextWorkflow(selected.text, {
+    presentation: 'panel',
+    title: '选中文本',
+    cursor,
+    allowClipboardFallback: true
+  });
+}
+
+async function handleQuickAction(action) {
+  if (action === 'capture') return runCaptureWorkflow({ presentation: 'overlay' });
+  if (action === 'clipboard') return runClipboardWorkflow({ presentation: 'panel' });
+  if (action === 'selection') return runSelectionWorkflow();
+  showMainWindow();
+  return { ok: true };
 }
 
 async function runQuestionWorkflow(question) {
@@ -387,8 +646,9 @@ function unregisterHotkeys() {
 function registerHotkeys(settings) {
   unregisterHotkeys();
   const definitions = [
-    [settings.screenshotHotkey, runCaptureWorkflow, '截图翻译'],
-    [settings.clipboardHotkey, runClipboardWorkflow, '剪贴板翻译']
+    [settings.screenshotHotkey, () => runCaptureWorkflow({ presentation: 'overlay' }), '截图翻译'],
+    [settings.clipboardHotkey, () => runClipboardWorkflow({ presentation: 'panel' }), '剪贴板翻译'],
+    [settings.selectionHotkey, runSelectionWorkflow, '选中文本翻译']
   ];
   const seen = new Set();
   try {
@@ -428,18 +688,30 @@ function createMainWindow() {
       webSecurity: true
     }
   });
+  mainRendererReady = false;
+  pendingWorkflowUpdates = [];
 
   mainWindow.setMenu(null);
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   mainWindow.webContents.on('will-navigate', (event) => event.preventDefault());
+  mainWindow.webContents.on('did-start-loading', () => {
+    mainRendererReady = false;
+  });
+  mainWindow.webContents.on('did-finish-load', markMainRendererReady);
   mainWindow.on('close', (event) => {
     if (!quitting && settingsStore.get().closeToTray) {
       event.preventDefault();
       mainWindow.hide();
     }
   });
-  mainWindow.on('closed', () => { mainWindow = null; });
-  mainWindow.once('ready-to-show', () => mainWindow?.show());
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+    mainRendererReady = false;
+    pendingWorkflowUpdates = [];
+  });
+  mainWindow.once('ready-to-show', () => {
+    if (!suppressAutoShow) mainWindow?.show();
+  });
   void mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
 }
 
@@ -447,15 +719,14 @@ function rebuildTrayMenu() {
   if (!tray) return;
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: '打开截译', click: showMainWindow },
-    { label: '框选截图', click: () => void runCaptureWorkflow() },
-    { label: '翻译剪贴板', click: () => void runClipboardWorkflow() },
+    { type: 'separator' },
+    { label: '截屏翻译', click: () => void runCaptureWorkflow({ presentation: 'overlay' }) },
+    { label: '翻译选中文本', click: () => void runSelectionWorkflow() },
+    { label: '翻译剪贴板', click: () => void runClipboardWorkflow({ presentation: 'panel' }) },
     { type: 'separator' },
     {
       label: '设置',
-      click: () => {
-        showMainWindow();
-        mainWindow?.webContents.send('app:navigate', 'settings');
-      }
+      click: openSettingsWindow
     },
     { type: 'separator' },
     {
@@ -471,7 +742,7 @@ function rebuildTrayMenu() {
 function createTray() {
   tray = new Tray(createTrayImage());
   tray.setToolTip(APP_NAME);
-  tray.on('click', showMainWindow);
+  tray.on('click', showMainWindowWhenReady);
   rebuildTrayMenu();
 }
 
@@ -507,7 +778,19 @@ function registerIpcHandlers() {
   });
   ipcMain.handle('settings:get', (event) => {
     assertMainSender(event);
-    return settingsStore.getPublic();
+    return getPublicSettings();
+  });
+  ipcMain.handle('quick:ready', (event) => {
+    if (!quickResultService?.acceptsSender(event.sender)) {
+      throw new Error('拒绝来自未知窗口的快速结果请求。');
+    }
+    return quickResultService.ready(event.sender);
+  });
+  ipcMain.handle('quick:action', (event, action) => {
+    if (!quickResultService?.acceptsSender(event.sender)) {
+      throw new Error('拒绝来自未知窗口的快速结果操作。');
+    }
+    return quickResultService.handleAction(action);
   });
   ipcMain.handle('network:status', async (event, patch = {}) => {
     assertMainSender(event);
@@ -519,7 +802,7 @@ function registerIpcHandlers() {
       return { ok: false, error: error.message };
     }
   });
-  ipcMain.handle('settings:save', (event, patch) => {
+  ipcMain.handle('settings:save', async (event, patch) => {
     assertMainSender(event);
     try {
       const normalized = normalizeSettingsPatch(patch);
@@ -531,11 +814,29 @@ function registerIpcHandlers() {
       }
       const previous = settingsStore.get();
       const candidate = { ...previous, ...normalized };
+      let integrationChanged = false;
       try {
         registerHotkeys(candidate);
+        if (
+          Object.hasOwn(normalized, 'shellIntegration')
+          && normalized.shellIntegration !== previous.shellIntegration
+          && !shellIntegrationDisabled
+        ) {
+          const applied = await shellIntegration.apply(normalized.shellIntegration);
+          if (!applied.ok) throw new Error(applied.error || 'Windows 右键菜单更新失败。');
+          integrationChanged = true;
+        }
         const publicSettings = settingsStore.update(normalized);
-        return { ok: true, settings: publicSettings };
+        quickResultService?.updateTheme(publicSettings.theme);
+        return { ok: true, settings: { ...publicSettings, integrationStatus: shellIntegration?.getStatus() || null } };
       } catch (error) {
+        if (integrationChanged) {
+          try {
+            await shellIntegration.apply(previous.shellIntegration);
+          } catch {
+            // Keep the original save error; the next launch reconciles the registry.
+          }
+        }
         try {
           registerHotkeys(previous);
         } catch (rollbackError) {
@@ -594,6 +895,29 @@ async function initialize() {
     preloadPath: path.join(__dirname, 'preload.js'),
     capturePagePath: path.join(__dirname, '..', 'renderer', 'capture.html')
   });
+  selectionService = new SelectionService({
+    scriptPath: app.isPackaged
+      ? path.join(process.resourcesPath, 'selection-reader.ps1')
+      : path.join(__dirname, 'selection-reader.ps1')
+  });
+  quickResultService = new QuickResultService({
+    BrowserWindow,
+    screen,
+    preloadPath: path.join(__dirname, 'quick-preload.js'),
+    pagePath: path.join(__dirname, '..', 'renderer', 'quick.html'),
+    copyText: (text) => clipboard.writeText(text),
+    showWorkspace: showMainWindowWhenReady,
+    translateClipboard: () => void runClipboardWorkflow({ presentation: 'panel' }),
+    resolveTheme: (theme = settingsStore.get().theme) =>
+      resolveQuickTheme(theme, nativeTheme.shouldUseDarkColors)
+  });
+  shellIntegrationDisabled = Boolean(process.env.SCREENLINGO_DISABLE_SHELL_INTEGRATION);
+  shellIntegration = new WindowsShellIntegration({
+    execPath: process.execPath,
+    appPath: app.getAppPath(),
+    isPackaged: app.isPackaged,
+    portableExecutable: process.env.PORTABLE_EXECUTABLE_FILE
+  });
 
   session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
   session.defaultSession.setPermissionCheckHandler(() => false);
@@ -601,10 +925,50 @@ async function initialize() {
   createMainWindow();
   createTray();
 
+  if (!shellIntegrationDisabled) {
+    const integrationEnabled = settingsStore.get().shellIntegration;
+    void (integrationEnabled ? shellIntegration.install() : shellIntegration.remove()).then((integrationResult) => {
+      if (!integrationResult.ok) {
+        sendWorkflowUpdate({
+          phase: 'idle',
+          error: { title: 'Windows 右键菜单不可用', message: integrationResult.error }
+        });
+      }
+      sendWorkflowUpdate({ integrationStatus: shellIntegration.getStatus() });
+    });
+  }
+
   try {
     registerHotkeys(settingsStore.get());
   } catch (error) {
     sendWorkflowUpdate({ phase: 'idle', error: { title: '快捷键不可用', message: error.message } });
+  }
+
+  nativeTheme.on('updated', () => {
+    if (settingsStore?.get().theme === 'system') quickResultService?.updateTheme('system');
+  });
+
+  appInitialized = true;
+  const queuedAction = pendingQuickAction;
+  pendingQuickAction = null;
+  if (queuedAction === 'show') {
+    showMainWindowWhenReady();
+  } else if (queuedAction) {
+    void handleQuickAction(queuedAction);
+  }
+}
+
+function handleSecondInstance(_event, argv) {
+  const action = parseQuickAction(argv);
+  if (!appInitialized) {
+    pendingQuickAction = action || 'show';
+    suppressAutoShow = true;
+    return;
+  }
+  if (action) {
+    void handleQuickAction(action);
+  } else {
+    showMainWindowWhenReady();
   }
 }
 
@@ -612,18 +976,19 @@ const hasSingleInstanceLock = app.requestSingleInstanceLock();
 if (!hasSingleInstanceLock) {
   app.quit();
 } else {
-  app.on('second-instance', showMainWindow);
+  app.on('second-instance', handleSecondInstance);
   app.whenReady().then(initialize).catch((error) => {
     dialog.showErrorBox(APP_NAME, `启动失败：${error?.message || error}`);
     app.quit();
   });
 }
 
-app.on('activate', showMainWindow);
+app.on('activate', showMainWindowWhenReady);
 app.on('before-quit', () => {
   quitting = true;
   unregisterHotkeys();
   cancelWorkflow({ notify: false });
+  quickResultService?.dispose();
   captureService?.dispose();
   void ocrService?.destroy();
 });
@@ -635,5 +1000,7 @@ module.exports = {
   APP_NAME,
   MAX_CLIPBOARD_TEXT_LENGTH,
   MAX_OPEN_IMAGE_BYTES,
+  handleQuickAction,
+  parseQuickAction,
   providerLabel
 };

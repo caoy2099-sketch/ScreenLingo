@@ -51,6 +51,25 @@ test('设置 schema 只保留 allowlist 字段并规范化值', () => {
   assert.throws(() => normalizeSettingsPatch({ endpoint: 'http://example.test/v1' }), { code: 'INVALID_SETTING' });
 });
 
+test('选中文本热键和 Windows 右键菜单设置通过同一 schema 校验', () => {
+  assert.equal(DEFAULT_SETTINGS.selectionHotkey, 'Alt+Shift+X');
+  assert.equal(DEFAULT_SETTINGS.shellIntegration, true);
+
+  const normalized = normalizeSettings({
+    selectionHotkey: 'Ctrl+Alt+X',
+    shellIntegration: false
+  });
+  assert.equal(normalized.selectionHotkey, 'Ctrl+Alt+X');
+  assert.equal(normalized.shellIntegration, false);
+
+  assert.deepEqual(
+    normalizeSettingsPatch({ selectionHotkey: 'Ctrl+Alt+X', shellIntegration: false }),
+    { selectionHotkey: 'Ctrl+Alt+X', shellIntegration: false }
+  );
+  assert.throws(() => normalizeSettingsPatch({ selectionHotkey: '' }), { code: 'INVALID_SETTING' });
+  assert.throws(() => normalizeSettingsPatch({ shellIntegration: 'yes' }), { code: 'INVALID_SETTING' });
+});
+
 test('safeStorage 可用时 API Key 加密落盘，getPublic 不泄露明文', (t) => {
   const directory = makeTempDir(t);
   const filePath = path.join(directory, 'settings.json');

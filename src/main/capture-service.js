@@ -21,8 +21,8 @@ function fitSizeWithinPixelLimit(size, maxPixels = MAX_SCREENSHOT_PIXELS) {
   };
 }
 
-function normalizeSelection(selection, imageSize) {
-  if (!selection || !imageSize) {
+function normalizeViewportSelection(selection) {
+  if (!selection) {
     throw new TypeError('缺少截图选区数据。');
   }
 
@@ -49,6 +49,20 @@ function normalizeSelection(selection, imageSize) {
   if (right - left < MIN_SELECTION_SIZE || bottom - top < MIN_SELECTION_SIZE) {
     throw new RangeError('选区太小，请重新框选。');
   }
+
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+function normalizeSelection(selection, imageSize) {
+  if (!imageSize) {
+    throw new TypeError('缺少截图选区数据。');
+  }
+  const viewportRect = normalizeViewportSelection(selection);
+  const viewportWidth = Number(selection.viewportWidth);
+  const viewportHeight = Number(selection.viewportHeight);
+  const { x: left, y: top, width } = viewportRect;
+  const right = left + width;
+  const bottom = top + viewportRect.height;
 
   const scaleX = imageSize.width / viewportWidth;
   const scaleY = imageSize.height / viewportHeight;
@@ -214,17 +228,25 @@ class CaptureService {
   }
 
   complete(selection) {
-    if (!this.pending || !this.sourceImage) {
+    if (!this.pending || !this.sourceImage || !this.pending.display) {
       throw new Error('当前没有待完成的截图。');
     }
 
+    const viewportRect = normalizeViewportSelection(selection);
     const crop = normalizeSelection(selection, this.sourceImage.getSize());
     const cropped = this.sourceImage.crop(crop);
+    const displayBounds = this.pending.display.bounds;
     const result = {
       dataUrl: cropped.toDataURL(),
       width: crop.width,
       height: crop.height,
-      displayId: String(this.pending.display.id)
+      displayId: String(this.pending.display.id),
+      screenRect: {
+        x: Math.round(displayBounds.x + viewportRect.x),
+        y: Math.round(displayBounds.y + viewportRect.y),
+        width: Math.max(1, Math.round(viewportRect.width)),
+        height: Math.max(1, Math.round(viewportRect.height))
+      }
     };
     this.finish(result);
     return result;
@@ -271,5 +293,6 @@ module.exports = {
   MIN_SELECTION_SIZE,
   chooseScreenSource,
   fitSizeWithinPixelLimit,
-  normalizeSelection
+  normalizeSelection,
+  normalizeViewportSelection
 };

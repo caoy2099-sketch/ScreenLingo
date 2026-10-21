@@ -81,7 +81,7 @@
               <button id="empty-capture-button" class="selection-prompt" type="button">
                 <i data-lucide="scan-text" aria-hidden="true"></i><span>开始框选截图</span><i data-lucide="arrow-up-right" aria-hidden="true"></i>
               </button>
-              <span class="capture-shortcut">或按 <kbd data-shortcut="capture">Alt + Shift + S</kbd></span>
+              <span class="capture-shortcut"><span class="shortcut-item">截图 <kbd data-shortcut="capture">Alt + Shift + S</kbd></span><span class="shortcut-item">选中文本 <kbd data-shortcut="selection">Alt + Shift + X</kbd></span></span>
             </div>
             <div class="translation-preview" role="img" aria-label="翻译示例：框选英文 TypeError 报错，获得中文类型错误译文">
               <span class="preview-label">一次框选，两种语言</span>
@@ -309,10 +309,23 @@
                   <input id="capture-hotkey-input" name="screenshotHotkey" type="text" maxlength="80" spellcheck="false" />
                 </label>
                 <label class="field">
+                  <span>选中文本热键</span>
+                  <input id="selection-hotkey-input" name="selectionHotkey" type="text" maxlength="80" spellcheck="false" />
+                </label>
+                <label class="field">
                   <span>剪贴板热键</span>
                   <input id="clipboard-hotkey-input" name="clipboardHotkey" type="text" maxlength="80" spellcheck="false" />
                 </label>
               </div>
+              <label class="switch-row">
+                <span>
+                  <strong>Windows 桌面右键菜单</strong>
+                  <small>在桌面或文件夹空白处右键，直接选择截屏翻译或翻译剪贴板</small>
+                </span>
+                <input id="shell-integration-input" name="shellIntegration" type="checkbox" />
+                <span class="switch" aria-hidden="true"></span>
+              </label>
+              <p id="shell-integration-state" class="field-note"></p>
               <label class="switch-row">
                 <span>
                   <strong>识别后自动翻译</strong>

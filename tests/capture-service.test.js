@@ -7,7 +7,8 @@ const {
   CaptureService,
   chooseScreenSource,
   fitSizeWithinPixelLimit,
-  normalizeSelection
+  normalizeSelection,
+  normalizeViewportSelection
 } = require('../src/main/capture-service');
 
 test('normalizeSelection maps logical coordinates to physical pixels', () => {
@@ -43,6 +44,58 @@ test('normalizeSelection rejects tiny or invalid selections', () => {
     /选区太小/
   );
   assert.throws(() => normalizeSelection({}, { width: 100, height: 100 }), /坐标无效/);
+});
+
+test('normalizeViewportSelection clamps reverse and oversized drags', () => {
+  assert.deepEqual(
+    normalizeViewportSelection({ x: 90, y: 40, width: 30, height: -20, viewportWidth: 100, viewportHeight: 60 }),
+    { x: 90, y: 20, width: 10, height: 20 }
+  );
+  assert.deepEqual(
+    normalizeViewportSelection({ x: -10, y: -20, width: 400, height: 300, viewportWidth: 100, viewportHeight: 60 }),
+    { x: 0, y: 0, width: 100, height: 60 }
+  );
+});
+
+test('CaptureService.complete reports the display-space screen rect for the quick overlay', async () => {
+  const { service } = createCaptureHarness();
+  const capturePromise = service.captureCurrentDisplay();
+  await new Promise((resolve) => setImmediate(resolve));
+  const result = service.complete({
+    x: 10,
+    y: 12,
+    width: 40,
+    height: 20,
+    viewportWidth: 100,
+    viewportHeight: 60
+  });
+  assert.deepEqual(result.screenRect, { x: 10, y: 12, width: 40, height: 20 });
+  assert.ok(result.dataUrl.startsWith('data:image/png;base64,'));
+  assert.equal(await capturePromise, result);
+  assert.equal(service.pending, null);
+});
+
+test('CaptureService.complete offsets the screen rect for displays left of the primary display', async () => {
+  const { service } = createCaptureHarness({
+    display: {
+      id: 7,
+      scaleFactor: 1,
+      size: { width: 100, height: 60 },
+      bounds: { x: -1280, y: 0, width: 100, height: 60 }
+    }
+  });
+  const capturePromise = service.captureCurrentDisplay();
+  await new Promise((resolve) => setImmediate(resolve));
+  const result = service.complete({
+    x: 10,
+    y: 12,
+    width: 40,
+    height: 20,
+    viewportWidth: 100,
+    viewportHeight: 60
+  });
+  assert.deepEqual(result.screenRect, { x: -1270, y: 12, width: 40, height: 20 });
+  await capturePromise;
 });
 
 test('chooseScreenSource matches Electron display_id before falling back', () => {
@@ -88,14 +141,14 @@ class FakeWindow extends EventEmitter {
   }
 }
 
-function createCaptureHarness({ getSources, BrowserWindow = FakeWindow } = {}) {
+function createCaptureHarness({ getSources, BrowserWindow = FakeWindow, display: displayOverride } = {}) {
   const thumbnail = {
     isEmpty: () => false,
     getSize: () => ({ width: 100, height: 60 }),
     toJPEG: () => Buffer.from('preview'),
     crop: () => ({ toDataURL: () => 'data:image/png;base64,crop' })
   };
-  const display = {
+  const display = displayOverride || {
     id: 7,
     scaleFactor: 1,
     size: { width: 100, height: 60 },

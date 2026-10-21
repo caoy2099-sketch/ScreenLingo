@@ -2,6 +2,16 @@
 
 日期：2026-09-23。环境：Windows 11 x64，Electron 44.2.0。
 
+## 2026-10-20 Windows 集成开发验证
+
+- `npm run check` 通过；`npm test` 报告 127 项自动化测试全部通过，覆盖选区 DIP 坐标回传、浮层定位/翻转/高度收敛、关闭后晚到结果不再重开、选中文本读取解析、Windows 右键菜单命令构造与 `HKCU` 边界，以及原有 OCR、翻译、网络、设置和发布工具回归。
+- 选中文本读取脚本在 Chromium 可编辑区域验证了包含中文的选区读取；结果通过 Base64 传输，避免 Windows PowerShell 重定向输出的代码页损坏。WinForms 旧式 TextBox 不暴露 UI Automation 选区，符合“支持因控件而异”的已知限制。
+- 用本机 Microsoft Edge 的无头渲染对浮层浅色、深色、加载、错误、点击动作和设置页新增区域做了检查；浮层按钮、Esc、复制、工作台、剪贴板回退和高度调整均触发预期动作，新增设置区无横向溢出。
+- 在当前用户下实际执行了右键菜单安装、`reg query` 核对和移除：菜单标签、图标路径和 `--quick-action=capture` 命令正确，移除后四个 `HKCU\Software\Classes` 键均不存在。
+- `npm run pack` 通过；`dist/win-unpacked/resources/app.asar` 包含浮层与 Windows 集成模块，`selection-reader.ps1` 已复制到 `resources/` 且与源码 SHA-256 一致。
+- 已将解包构建安装到当前用户的 `%LOCALAPPDATA%\Programs\ScreenLingo\0.1.0`，并实际启动安装版；主窗口正常运行，开始菜单快捷方式和四个 `HKCU` 右键菜单键均已建立。
+- 本次没有重跑完整 Electron E2E。真实桌面上的截图覆盖交互、冷启动右键调用、多显示器缩放和更多控件的 UI Automation 兼容性仍需在交互式桌面上复验。
+
 ## 已通过
 
 - Node 测试运行器报告 100 项自动化测试全部通过（核心服务、设置/网络/翻译，以及发布工具的 44 项子测试）。

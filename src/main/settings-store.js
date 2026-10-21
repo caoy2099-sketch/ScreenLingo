@@ -13,8 +13,10 @@ const DEFAULT_SETTINGS = Object.freeze({
   visionModel: 'qwen3-vl:2b',
   screenshotHotkey: 'Alt+Shift+S',
   clipboardHotkey: 'Alt+Shift+T',
+  selectionHotkey: 'Alt+Shift+X',
   autoTranslate: true,
   closeToTray: true,
+  shellIntegration: true,
   theme: 'system'
 });
 
@@ -125,10 +127,14 @@ function normalizeField(key, value, fallback, strict) {
       return normalizeString(value, fallback, MAX_HOTKEY_LENGTH, strict, '截图快捷键');
     case 'clipboardHotkey':
       return normalizeString(value, fallback, MAX_HOTKEY_LENGTH, strict, '剪贴板快捷键');
+    case 'selectionHotkey':
+      return normalizeString(value, fallback, MAX_HOTKEY_LENGTH, strict, '选中文本快捷键');
     case 'autoTranslate':
       return normalizeBoolean(value, fallback, strict, '自动翻译设置');
     case 'closeToTray':
       return normalizeBoolean(value, fallback, strict, '关闭到托盘设置');
+    case 'shellIntegration':
+      return normalizeBoolean(value, fallback, strict, 'Windows 右键菜单设置');
     case 'theme':
       return normalizeEnum(value, ALLOWED_THEMES, fallback, strict, '主题');
     default:

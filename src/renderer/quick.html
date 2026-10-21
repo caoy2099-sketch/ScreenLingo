@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; img-src 'self' data:; style-src 'self'; script-src 'self';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>截译</title>
+    <link rel="stylesheet" href="quick.css" />
+    <script defer src="quick.js"></script>
+  </head>
+  <body>
+    <main id="quick-shell" class="quick-shell" role="dialog" aria-modal="false" aria-labelledby="quick-title">
+      <header class="quick-header">
+        <span class="quick-mark" aria-hidden="true">译</span>
+        <div class="quick-heading">
+          <strong id="quick-title">截图翻译</strong>
+          <span id="quick-meta">本地 OCR</span>
+        </div>
+        <button id="quick-close" class="quick-icon-button" type="button" aria-label="关闭" title="关闭 (Esc)">
+          <span aria-hidden="true">×</span>
+        </button>
+      </header>
+
+      <section id="quick-loading" class="quick-loading" aria-live="polite">
+        <span class="quick-spinner" aria-hidden="true"></span>
+        <div class="quick-loading-copy">
+          <p id="quick-loading-message">正在识别屏幕文字</p>
+          <span id="quick-progress-track" class="quick-progress-track" hidden><span id="quick-progress"></span></span>
+        </div>
+      </section>
+
+      <section id="quick-result" class="quick-result" aria-labelledby="quick-title" hidden>
+        <p id="quick-translation" class="quick-translation" tabindex="0" aria-live="polite"></p>
+        <details id="quick-source-box" class="quick-source" hidden>
+          <summary>原文</summary>
+          <p id="quick-source"></p>
+        </details>
+      </section>
+
+      <section id="quick-error" class="quick-error" role="alert" hidden>
+        <span class="quick-error-mark" aria-hidden="true">!</span>
+        <p id="quick-error-message"></p>
+      </section>
+
+      <footer id="quick-footer" class="quick-footer">
+        <button id="quick-copy" class="quick-command quick-primary" type="button" hidden>复制译文</button>
+        <button id="quick-clipboard" class="quick-command" type="button" hidden>翻译剪贴板</button>
+        <button id="quick-workspace" class="quick-command" type="button">打开工作台</button>
+        <span class="quick-shortcut">Esc</span>
+      </footer>
+    </main>
+    <div id="quick-toast" class="quick-toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

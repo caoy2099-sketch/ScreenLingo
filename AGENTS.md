@@ -4,7 +4,7 @@
 
 ## What
 
-ScreenLingo is a Windows screenshot OCR, translation, and screenshot Q&A tool for developer errors. OCR runs locally; translation is online unless the user configures a local OpenAI-compatible model.
+ScreenLingo is a Windows screenshot OCR, translation, and screenshot Q&A tool for developer errors. OCR runs locally; translation is online unless the user configures a local OpenAI-compatible model. Screenshot results can be shown as a lightweight overlay over the captured region, and selected text can be translated in a compact panel beside the cursor. Explorer and tray context menus provide quick entry points.
 
 ## Quick Start
 
@@ -35,27 +35,32 @@ Use `npm ci` for a clean install. Use `npm install` only when intentionally chan
 
 ```text
 src/
-  main/       Electron lifecycle, IPC, capture, OCR, network, settings
-  renderer/   Main window and capture overlay UI
+  main/       Electron lifecycle, IPC, capture, OCR, network, settings, quick overlays, Windows integration
+  renderer/   Main window, capture overlay, and quick result window UI
   assets/     Application icons
 tests/        Node unit tests
   e2e/        Playwright-driven Electron desktop tests
 scripts/      Maintainer and asset-generation scripts
-docs/         Privacy, open-source research, and supporting documentation
+docs/         Privacy, Windows integration, open-source research, and supporting documentation
 ```
 
-The main process owns privileged operations. A narrow preload bridge exposes approved IPC calls to the isolated renderer. A capture flows from desktop selection to the OCR worker, then through the selected network route and translation provider before results return to the UI.
+The main process owns privileged operations. A narrow preload bridge exposes approved IPC calls to the isolated renderer. A capture flows from desktop selection to the OCR worker, then through the selected network route and translation provider before results return to the workbench or a quick result overlay. Quick windows use a separate preload and can only receive text state and send a small set of validated actions.
 
 ## Key Files
 
 ```text
 src/main/main.js                 Application entry point and IPC orchestration
-src/main/preload.js              Renderer API allowlist
 src/main/capture-service.js      Desktop capture lifecycle and crop selection
+src/main/quick-result-service.js Screenshot cover overlay and cursor-side result panel
+src/main/selection-service.js    Windows UI Automation selected-text reader
+src/main/windows-shell-integration.js Per-user Explorer context-menu registration
 src/main/ocr-service.js          Local OCR worker queue, cancellation, watchdogs
 src/main/network-service.js      Direct, system, and local-proxy routing
 src/main/translation-service.js  Bing, Google, and OpenAI-compatible providers
 src/main/settings-store.js       Validation and encrypted API key persistence
+src/main/preload.js              Workbench renderer API allowlist
+src/main/quick-preload.js        Minimal quick-result renderer API allowlist
+src/renderer/quick.js            Quick result UI state and actions
 src/renderer/app.js              Main UI state and interactions
 tests/e2e/smoke.cjs              Real Electron workflow coverage
 package.json                     Scripts, dependencies, and electron-builder config
@@ -68,6 +73,8 @@ package.json                     Scripts, dependencies, and electron-builder con
 - Store API keys only through Electron `safeStorage`; never log secrets, proxy credentials, subscriptions, screenshots, or clipboard contents.
 - Remote model endpoints require HTTPS. HTTP is allowed only for loopback hosts. Do not silently follow redirects or bypass the user's selected network mode.
 - Keep screenshot OCR local. Upload images only after the user explicitly invokes screenshot Q&A.
+- Read selected text only through the user-invoked Windows UI Automation path; never simulate copy, read password controls, or log selections.
+- Keep Explorer integration under the current user's `HKCU`; do not add services, startup entries, file associations, or `HKLM` writes. Keep the settings switch able to remove every key.
 - Preserve user cancellation as a non-error outcome and do not replace previous results on cancelled capture.
 
 ## Testing Expectations

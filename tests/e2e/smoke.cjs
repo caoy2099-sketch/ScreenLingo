@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
+const { spawn } = require('node:child_process');
 const { _electron: electron } = require('playwright-core');
 
 const root = path.resolve(__dirname, '..', '..');
@@ -76,10 +77,15 @@ async function run() {
   const settings = {
     provider: 'openai', endpoint, model: 'fixture-text', visionModel: 'fixture-vision',
     screenshotHotkey: 'Alt+Shift+F9', clipboardHotkey: 'Alt+Shift+F10',
-    autoTranslate: false, closeToTray: true, theme: 'light'
+    selectionHotkey: 'Alt+Shift+F11',
+    autoTranslate: false, closeToTray: true, shellIntegration: false, theme: 'light'
   };
   fs.writeFileSync(path.join(profile, 'settings.json'), JSON.stringify(settings));
-  const env = { ...process.env, SCREENLINGO_TEST_PROFILE: profile };
+  const env = {
+    ...process.env,
+    SCREENLINGO_TEST_PROFILE: profile,
+    SCREENLINGO_DISABLE_SHELL_INTEGRATION: '1'
+  };
   delete env.ELECTRON_RUN_AS_NODE;
   const packaged = Boolean(process.env.SCREENLINGO_EXE);
   let app;
@@ -105,6 +111,8 @@ async function run() {
     assert.equal(await page.locator('#empty-view').isVisible(), true);
     await page.waitForFunction(() =>
       document.querySelector('[data-shortcut="capture"]').textContent === 'Alt + Shift + F9');
+    await page.waitForFunction(() =>
+      document.querySelector('[data-shortcut="selection"]').textContent === 'Alt + Shift + F11');
     const captureShortcuts = await page.locator('[data-shortcut="capture"]').allTextContents();
     assert.deepEqual(captureShortcuts, Array(captureShortcuts.length).fill('Alt + Shift + F9'));
     await captureScreenshot(page, '01-empty.png');
@@ -147,6 +155,9 @@ async function run() {
     await page.locator('#settings-open').click();
     assert.equal(await page.locator('#endpoint-input').inputValue(), endpoint);
     await page.locator('#model-input').fill('fixture-text');
+    assert.equal(await page.locator('#selection-hotkey-input').inputValue(), 'Alt+Shift+F11');
+    assert.equal(await page.locator('#shell-integration-input').isChecked(), false);
+    assert.match(await page.locator('#shell-integration-state').textContent(), /保存设置后/);
     await page.locator('#api-key-input').fill('fixture-secret');
     await page.locator('#api-key-toggle').click();
     assert.equal(await page.locator('#api-key-input').getAttribute('type'), 'text');
@@ -480,10 +491,40 @@ async function run() {
     const conflict = await page.evaluate(() => window.screenLingo.saveSettings({ screenshotHotkey: 'Alt+Shift+F9', clipboardHotkey: 'Alt+Shift+F9' }));
     assert.equal(conflict.ok, false);
     const hotkeys = await app.evaluate(({ globalShortcut }) => [
-      globalShortcut.isRegistered('Alt+Shift+F9'), globalShortcut.isRegistered('Alt+Shift+F10')
+      globalShortcut.isRegistered('Alt+Shift+F9'),
+      globalShortcut.isRegistered('Alt+Shift+F10'),
+      globalShortcut.isRegistered('Alt+Shift+F11')
     ]);
-    assert.deepEqual(hotkeys, [true, true]);
-    checks.push('Hotkey conflicts preserve original settings and both registered shortcuts');
+    assert.deepEqual(hotkeys, [true, true, true]);
+    checks.push('Hotkey conflicts preserve original settings and all registered shortcuts');
+
+    if (!packaged) {
+      await app.evaluate(({ clipboard }) => {
+        clipboard.writeText('TypeError: Cannot read properties of undefined (reading "name")');
+      });
+      const quickWindowPromise = app.waitForEvent('window');
+      const secondInstance = spawn(require('electron'), [
+        path.join(__dirname, 'launch.cjs'),
+        '--quick-action=clipboard'
+      ], {
+        env,
+        stdio: 'ignore',
+        windowsHide: true
+      });
+      secondInstance.unref();
+      const quickPanel = await quickWindowPromise;
+      quickPanel.on('pageerror', (error) => errors.push(error.message));
+      await quickPanel.waitForFunction(() =>
+        document.querySelector('#quick-translation')?.textContent.includes('类型错误'), null, { timeout: 20000 });
+      assert.match(quickPanel.url(), /quick\.html/);
+      assert.equal(await quickPanel.locator('#quick-copy').isVisible(), true);
+      await captureScreenshot(quickPanel, '09-quick-clipboard-panel.png');
+      await quickPanel.locator('#quick-close').click().catch((error) => {
+        if (!/closed/i.test(error.message)) throw error;
+      });
+      await page.waitForFunction(() => document.querySelector('#translation-output').textContent.includes('类型错误'));
+      checks.push('Second-instance quick action opens the compact clipboard panel with translated text');
+    }
 
     await page.locator('#settings-open').click();
     assert.equal(await page.locator('#api-key-clear').isVisible(), true);

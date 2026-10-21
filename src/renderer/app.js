@@ -19,8 +19,9 @@ const elements = Object.fromEntries(
     'result-announcer',
     'settings-form', 'settings-save', 'settings-error', 'openai-fields', 'endpoint-input',
     'model-input', 'vision-model-input', 'api-key-input', 'api-key-toggle', 'api-key-clear', 'api-key-state',
-    'capture-hotkey-input', 'clipboard-hotkey-input', 'auto-translate-input',
-    'close-to-tray-input', 'proxy-input', 'proxy-field', 'network-check', 'network-result'
+    'capture-hotkey-input', 'clipboard-hotkey-input', 'selection-hotkey-input', 'auto-translate-input',
+    'close-to-tray-input', 'shell-integration-input', 'shell-integration-state',
+    'proxy-input', 'proxy-field', 'network-check', 'network-result'
   ].map((id) => [
     id.replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase()),
     document.getElementById(id)
@@ -272,6 +273,9 @@ function applyWorkflowUpdate(update) {
   if (typeof update.networkLabel === 'string') {
     elements.statusEngine.textContent = `本地 OCR · ${update.networkLabel}`;
   }
+  if (update.integrationStatus) {
+    updateIntegrationNote(update.integrationStatus);
+  }
 
   if (typeof update.phase === 'string') {
     state.phase = update.phase;
@@ -343,6 +347,30 @@ async function copyText(text, label) {
   }
 }
 
+function updateIntegrationNote(status) {
+  elements.shellIntegrationState.classList.remove('is-warning');
+  if (!status) {
+    elements.shellIntegrationState.textContent = '';
+    return;
+  }
+  if (status.supported === false) {
+    elements.shellIntegrationState.textContent = '当前系统不支持 Windows 资源管理器右键菜单。';
+    return;
+  }
+  if (status.error) {
+    elements.shellIntegrationState.textContent = status.error;
+    elements.shellIntegrationState.classList.add('is-warning');
+    return;
+  }
+  if (status.installed) {
+    elements.shellIntegrationState.textContent = '已添加到桌面和文件夹空白处的右键菜单；Windows 11 中位于“显示更多选项”。';
+    return;
+  }
+  elements.shellIntegrationState.textContent = elements.shellIntegrationInput.checked
+    ? '正在添加或等待保存桌面右键菜单；若未出现，可重新保存设置重试。'
+    : '右键菜单已关闭，保存设置后会移除相关条目。';
+}
+
 function populateSettings(settings) {
   if (!settings) return;
   state.settings = settings;
@@ -360,8 +388,12 @@ function populateSettings(settings) {
   elements.apiKeyClear.hidden = !settings.hasApiKey;
   elements.captureHotkeyInput.value = settings.screenshotHotkey || 'Alt+Shift+S';
   elements.clipboardHotkeyInput.value = settings.clipboardHotkey || 'Alt+Shift+T';
+  elements.selectionHotkeyInput.value = settings.selectionHotkey || 'Alt+Shift+X';
+  elements.shellIntegrationInput.checked = settings.shellIntegration !== false;
+  updateIntegrationNote(settings.integrationStatus);
   for (const [shortcut, value] of [
     ['capture', elements.captureHotkeyInput.value],
+    ['selection', elements.selectionHotkeyInput.value],
     ['clipboard', elements.clipboardHotkeyInput.value]
   ]) {
     document.querySelectorAll(`[data-shortcut="${shortcut}"]`).forEach((label) => {
@@ -421,8 +453,10 @@ async function saveSettings(event) {
     visionModel: elements.visionModelInput.value.trim(),
     screenshotHotkey: elements.captureHotkeyInput.value.trim(),
     clipboardHotkey: elements.clipboardHotkeyInput.value.trim(),
+    selectionHotkey: elements.selectionHotkeyInput.value.trim(),
     autoTranslate: elements.autoTranslateInput.checked,
     closeToTray: elements.closeToTrayInput.checked,
+    shellIntegration: elements.shellIntegrationInput.checked,
     theme: String(form.get('theme') || 'system')
   };
   if (elements.apiKeyInput.value) payload.apiKey = elements.apiKeyInput.value;
@@ -482,6 +516,12 @@ function bindActions() {
     if (event.target.name === 'provider') updateProviderFields();
     if (event.target.name === 'theme') applyTheme(event.target.value);
     if (event.target.name === 'networkMode') updateNetworkFields();
+    if (event.target.name === 'shellIntegration') {
+      elements.shellIntegrationState.textContent = event.target.checked
+        ? '保存设置后启用桌面右键菜单。'
+        : '保存设置后从桌面右键菜单移除。';
+      elements.shellIntegrationState.classList.remove('is-warning');
+    }
   });
   elements.networkCheck.addEventListener('click', checkNetwork);
   elements.settingsForm.addEventListener('submit', saveSettings);
