@@ -45,14 +45,20 @@ jobs:
         id: desktop_tests
         run: npm run test:e2e
 
+      - name: Run glass theme tests
+        id: glass_tests
+        run: npm run test:glass
+
       - name: Upload desktop E2E diagnostics
-        if: failure() && steps.desktop_tests.conclusion == 'failure'
+        if: failure() && (steps.desktop_tests.conclusion == 'failure' || steps.glass_tests.conclusion == 'failure')
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: desktop-e2e-artifacts
           path: |
             artifacts/development/failure.json
             artifacts/development/*.png
+            artifacts/glass/report.json
+            artifacts/glass/*.png
           if-no-files-found: warn
           retention-days: 7
 

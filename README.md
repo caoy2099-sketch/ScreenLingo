@@ -4,19 +4,17 @@
 
 Windows 上的本地截图 OCR、报错翻译和截图提问工具，适合把英文代码报错快速看懂。它也可以作为一层轻量的 Windows 浮层工作：截图译文直接覆盖原选区，选中文本的译文贴在光标旁，桌面右键即可开始。
 
-![截图翻译浮层](docs/assets/screenlingo-overlay.png)
-
-![截译主界面](docs/assets/screenlingo-home.png)
+![截译玻璃主题](docs/assets/screenlingo-glass.png)
 
 ## 下载
 
-直接下载 [最新 Release](https://github.com/caoy2099-sketch/ScreenLingo/releases/latest)，或下载当前版本 v0.2.0：
+直接下载 [最新 Release](https://github.com/caoy2099-sketch/ScreenLingo/releases/latest)，或下载当前版本 v0.3.0：
 
 | 文件 | 推荐场景 |
 | --- | --- |
-| [ScreenLingo-0.2.0-win-x64.zip](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.2.0/ScreenLingo-0.2.0-win-x64.zip) | 推荐。解压后运行 `win-unpacked/截译 ScreenLingo.exe`，请保留整个文件夹。 |
-| [ScreenLingo-0.2.0-x64.exe](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.2.0/ScreenLingo-0.2.0-x64.exe) | 便携单文件。每次启动会先解压，启动速度较慢。 |
-| [SHA256SUMS.txt](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.2.0/SHA256SUMS.txt) | 校验下载文件完整性。 |
+| [ScreenLingo-0.3.0-win-x64.zip](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.3.0/ScreenLingo-0.3.0-win-x64.zip) | 推荐。解压后运行 `win-unpacked/截译 ScreenLingo.exe`，请保留整个文件夹。 |
+| [ScreenLingo-0.3.0-x64.exe](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.3.0/ScreenLingo-0.3.0-x64.exe) | 便携单文件。每次启动会先解压，启动速度较慢。 |
+| [SHA256SUMS.txt](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.3.0/SHA256SUMS.txt) | 校验下载文件完整性。 |
 
 程序暂未进行商业代码签名，首次启动时 Windows SmartScreen 可能显示“未知发布者”。请只从本仓库的 Releases 下载。
 
@@ -24,7 +22,7 @@ Windows 上的本地截图 OCR、报错翻译和截图提问工具，适合把�
 
 移动版把“截图/分享 → 本地识字 → 点选词句 → 翻译、提问或复制”带到 Android 8.0 及以上设备。它支持相册导入、系统分享、兼容应用的文字选择菜单和主动粘贴；截图只有在提问时主动勾选才会发送给配置的视觉模型。
 
-当前版本为 `0.1.0-alpha.1`，可从 [Android alpha Release](https://github.com/caoy2099-sketch/ScreenLingo/releases/tag/mobile-v0.1.0-alpha.1) 下载个人体验包；尚未完成不同品牌手机的真机兼容性验收。默认翻译使用必应在线接口；手机上的系统 VPN/代理由 Android 网络栈处理，不会扫描电脑上的 v2rayN。源码、安装说明、隐私边界和构建验证记录见 [Android 移动版说明](mobile/README.md)。
+当前版本为 `0.1.0-alpha.2`：[下载 APK](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/mobile-v0.1.0-alpha.2/ScreenLingo-mobile-0.1.0-alpha.2-debug.apk) · [更新说明](https://github.com/caoy2099-sketch/ScreenLingo/releases/tag/mobile-v0.1.0-alpha.2)。本次同步新的「译」字图标，移动端仍使用现有浅色／深色界面。APK 为 debug 签名个人体验包，尚未完成不同品牌手机的真机兼容性验收；使用方法见 [Android 移动版说明](mobile/README.md)。
 
 ## 三步开始
 
@@ -44,6 +42,10 @@ Windows 上的本地截图 OCR、报错翻译和截图提问工具，适合把�
 Windows 不能把普通应用的项目插入所有软件的原生文本右键菜单；截译不做进程注入，所以“翻译选中文本”走全局快捷键和托盘入口。具体边界、注册表位置与卸载方式见 [Windows 集成说明](docs/WINDOWS_INTEGRATION.md)。
 
 ![选中文本翻译小窗](docs/assets/screenlingo-selection-panel.png)
+
+## 玻璃主题
+
+在「偏好设置 → 外观主题」选择「玻璃」并保存，工作台、翻译浮窗和框选提示会一起切换为深海蓝与冰青色。按钮按压、卡片高光和页面切换提供轻微动效，并遵循系统减少动态效果偏好。[查看主题预览](docs/GLASS_THEME.md)。
 
 ## 常用快捷键
 

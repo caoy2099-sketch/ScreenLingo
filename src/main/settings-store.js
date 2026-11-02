@@ -22,7 +22,7 @@ const DEFAULT_SETTINGS = Object.freeze({
 
 const PUBLIC_SETTING_KEYS = Object.freeze(Object.keys(DEFAULT_SETTINGS));
 const ALLOWED_PROVIDERS = new Set(['bing', 'google', 'openai']);
-const ALLOWED_THEMES = new Set(['system', 'light', 'dark']);
+const ALLOWED_THEMES = new Set(['system', 'light', 'dark', 'glass']);
 const MAX_ENDPOINT_LENGTH = 2_048;
 const MAX_MODEL_LENGTH = 200;
 const MAX_HOTKEY_LENGTH = 100;

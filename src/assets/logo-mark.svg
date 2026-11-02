@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <title>ScreenLingo</title>
+  <desc>An original geometric translation character on an ice-cyan square.</desc>
+  <rect x="12" y="12" width="488" height="488" rx="104" fill="#9be5ef"/>
+  <path d="M106 102l40 34M84 204h62v194l28-36M228 108h184c-30 66-88 114-180 143M250 143c36 49 87 85 164 108M240 305h174M232 373h202M326 278v154" stroke="#102a36" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

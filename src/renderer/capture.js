@@ -1,5 +1,8 @@
 'use strict';
 
+const captureTheme = new URLSearchParams(window.location.search).get('theme');
+document.documentElement.dataset.theme = ['light', 'dark', 'glass'].includes(captureTheme) ? captureTheme : 'dark';
+
 const surface = document.querySelector('#capture-surface');
 const image = document.querySelector('#screen-image');
 const selection = document.querySelector('#selection');

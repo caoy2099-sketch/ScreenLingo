@@ -133,7 +133,10 @@ class FakeWindow extends EventEmitter {
   show() {}
   focus() {}
   isDestroyed() { return this.destroyed; }
-  loadFile() { return Promise.resolve(); }
+  loadFile(pagePath, options) {
+    this.loaded = { pagePath, options };
+    return Promise.resolve();
+  }
   destroy() {
     if (this.destroyed) return;
     this.destroyed = true;
@@ -168,6 +171,19 @@ function createCaptureHarness({ getSources, BrowserWindow = FakeWindow, display:
   });
   return { service, thumbnail };
 }
+
+test('CaptureService loads each capture with the selected palette and rejects unknown theme values', async () => {
+  const { service } = createCaptureHarness();
+  for (const [theme, expected] of [['glass', 'glass'], ['light', 'light'], ['dark', 'dark'], ['glass&extra=1', 'dark']]) {
+    const capture = service.captureCurrentDisplay({ theme });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(service.captureWindow.loaded, {
+      pagePath: 'capture.html', options: { query: { theme: expected } }
+    });
+    service.cancel();
+    assert.equal(await capture, null);
+  }
+});
 
 test('CaptureService locks concurrent requests before desktop capture resolves', async () => {
   let resolveSources;

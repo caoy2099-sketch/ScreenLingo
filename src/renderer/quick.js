@@ -66,7 +66,7 @@ function applyState(next) {
   const modeChanged = state?.mode !== next.mode;
   state = next;
   if (modeChanged) lastRequestedHeight = 0;
-  document.documentElement.dataset.theme = next.theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = ['light', 'dark', 'glass'].includes(next.theme) ? next.theme : 'light';
   document.body.dataset.mode = next.mode === 'overlay' ? 'overlay' : 'panel';
   document.title = next.title ? `${next.title} · 截译` : '截译';
 

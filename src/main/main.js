@@ -331,7 +331,7 @@ async function runCaptureWorkflow({ presentation = 'workspace' } = {}) {
 
   let captureAnchor = null;
   try {
-    const capture = await captureService.captureCurrentDisplay();
+    const capture = await captureService.captureCurrentDisplay({ theme: quickTheme() });
     if (!isCurrentWorkflow(task.revision, task.signal)) return { ok: false, cancelled: true };
     if (!capture) {
       if (wasVisible) showMainWindow();

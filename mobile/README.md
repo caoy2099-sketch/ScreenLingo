@@ -2,7 +2,13 @@
 
 把截图里的文字取出来，轻点选中需要的词句，再翻译、提问、复制或分享。适合英文 App 提示、报错截图、外语社区和无法复制的内容。
 
-支持 **Android 8.0 及以上**。当前版本为 `0.1.0-alpha.1`，可从 [GitHub Android alpha Release](https://github.com/caoy2099-sketch/ScreenLingo/releases/tag/mobile-v0.1.0-alpha.1) 下载；这是 debug 签名个人体验包，尚未完成不同品牌手机的真机兼容性验收。
+支持 **Android 8.0 及以上**。当前版本为 `0.1.0-alpha.2`，这是 debug 签名个人体验包，尚未完成不同品牌手机的真机兼容性验收。
+
+[下载 APK](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/mobile-v0.1.0-alpha.2/ScreenLingo-mobile-0.1.0-alpha.2-debug.apk) · [SHA-256 校验文件](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/mobile-v0.1.0-alpha.2/SHA256SUMS.txt) · [更新说明](https://github.com/caoy2099-sketch/ScreenLingo/releases/tag/mobile-v0.1.0-alpha.2)
+
+本次换上与桌面版一致的冰青色「译」字图标。移动端继续使用现有浅色／深色界面，玻璃主题目前仅适用于 Windows。
+
+已安装上一版 alpha.1 的用户可尝试直接覆盖安装；两个版本使用相同签名，升级无需先卸载。请先复制当前会话中需要保留的内容。
 
 ## 怎么用
 

@@ -56,14 +56,20 @@ jobs:
         id: development_tests
         run: npm run test:e2e
 
+      - name: Run development glass theme tests
+        id: development_glass_tests
+        run: npm run test:glass
+
       - name: Upload development E2E diagnostics
-        if: failure() && steps.development_tests.conclusion == 'failure'
+        if: failure() && (steps.development_tests.conclusion == 'failure' || steps.development_glass_tests.conclusion == 'failure')
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-development-e2e-diagnostics
           path: |
             artifacts/development/failure.json
             artifacts/development/*.png
+            artifacts/glass/report.json
+            artifacts/glass/*.png
           if-no-files-found: warn
           retention-days: 7
 
@@ -89,14 +95,23 @@ jobs:
           SCREENLINGO_EXE: dist\win-unpacked\截译 ScreenLingo.exe
         run: npm run test:e2e
 
+      - name: Run packaged glass theme tests
+        id: packaged_glass_tests
+        shell: pwsh
+        env:
+          SCREENLINGO_EXE: dist\win-unpacked\截译 ScreenLingo.exe
+        run: npm run test:glass
+
       - name: Upload packaged E2E diagnostics
-        if: failure() && steps.packaged_tests.conclusion == 'failure'
+        if: failure() && (steps.packaged_tests.conclusion == 'failure' || steps.packaged_glass_tests.conclusion == 'failure')
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-packaged-e2e-diagnostics
           path: |
             artifacts/packaged/failure.json
             artifacts/packaged/*.png
+            artifacts/glass-packaged/report.json
+            artifacts/glass-packaged/*.png
           if-no-files-found: warn
           retention-days: 7
 
@@ -134,6 +149,7 @@ jobs:
           $zipAsset = Join-Path $assetsDirectory "ScreenLingo-$version-win-x64.zip"
           $checksums = Join-Path $assetsDirectory 'SHA256SUMS.txt'
           $releaseNotes = Join-Path $assetsDirectory 'release-notes.md'
+          $releaseNotesSource = Join-Path 'docs\releases' "v$version.md"
 
           if (-not (Test-Path -LiteralPath $portable -PathType Leaf)) {
             throw "Portable executable was not created at $portable"
@@ -144,11 +160,14 @@ jobs:
           if (-not (Test-Path -LiteralPath $model -PathType Leaf)) {
             throw "Bundled OCR model was not created at $model"
           }
+          if (-not (Test-Path -LiteralPath $releaseNotesSource -PathType Leaf)) {
+            throw "Release notes were not found at $releaseNotesSource"
+          }
 
           New-Item -ItemType Directory -Path $assetsDirectory | Out-Null
           Copy-Item -LiteralPath $portable -Destination $portableAsset
           Compress-Archive -Path $unpacked -DestinationPath $zipAsset -CompressionLevel Optimal
-          Copy-Item -LiteralPath 'docs\releases\v0.2.0.md' -Destination $releaseNotes
+          Copy-Item -LiteralPath $releaseNotesSource -Destination $releaseNotes
           $assets = @($portableAsset, $zipAsset)
           $lines = foreach ($asset in $assets) {
             $hash = (Get-FileHash -LiteralPath $asset -Algorithm SHA256).Hash.ToLowerInvariant()

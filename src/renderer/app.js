@@ -43,6 +43,43 @@ const state = {
 };
 
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+let resetGlassGlow = () => {};
+
+function bindGlassGlow() {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const cards = [...document.querySelectorAll('.input-card')];
+  let frame = null;
+  let point = null;
+  function reset() {
+    window.cancelAnimationFrame(frame);
+    frame = null;
+    point = null;
+    cards.forEach((card) => card.classList.remove('glass-hover'));
+  }
+  function paint() {
+    frame = null;
+    if (!point || document.hidden || reducedMotion.matches || document.documentElement.dataset.theme !== 'glass') return;
+    const { card, x, y } = point;
+    const rect = card.getBoundingClientRect();
+    card.style.setProperty('--glow-x', `${x - rect.left}px`);
+    card.style.setProperty('--glow-y', `${y - rect.top}px`);
+    card.classList.add('glass-hover');
+  }
+  cards.forEach((card) => {
+    card.addEventListener('pointermove', (event) => {
+      if (event.pointerType !== 'mouse' || card.disabled || reducedMotion.matches || document.documentElement.dataset.theme !== 'glass') return;
+      point = { card, x: event.clientX, y: event.clientY };
+      if (frame === null) frame = window.requestAnimationFrame(paint);
+    }, { passive: true });
+    card.addEventListener('pointerleave', reset);
+    card.addEventListener('pointercancel', reset);
+  });
+  reducedMotion.addEventListener('change', reset);
+  document.addEventListener('visibilitychange', reset);
+  window.addEventListener('blur', reset);
+  window.addEventListener('pagehide', reset);
+  return reset;
+}
 
 function refreshIcons() {
   if (window.lucide) {
@@ -66,12 +103,16 @@ function showToast(message) {
 }
 
 function applyTheme(theme) {
+  resetGlassGlow();
   state.theme = theme || 'system';
   const resolved = state.theme === 'system' ? (systemTheme.matches ? 'dark' : 'light') : state.theme;
   document.documentElement.dataset.theme = resolved;
-  const nextThemeLabel = resolved === 'dark' ? '切换至浅色主题' : '切换至深色主题';
+  const nextThemeLabel = resolved === 'light' ? '切换至深色主题' : '切换至浅色主题';
   elements.themeToggle.title = nextThemeLabel;
   elements.themeToggle.setAttribute('aria-label', nextThemeLabel);
+  elements.settingsForm.querySelectorAll('input[name="theme"]').forEach((input) => {
+    input.checked = input.value === state.theme;
+  });
 }
 
 function setStatus(message, tone = 'ready') {
@@ -161,6 +202,7 @@ function handleSourceTabKeydown(event) {
 }
 
 function updateViewNavigation(view) {
+  resetGlassGlow();
   const isSettings = view === 'settings';
   elements.appShell.dataset.view = view;
   elements.pageTitle.textContent = isSettings ? '偏好设置' : '翻译工作台';
@@ -493,7 +535,7 @@ function bindActions() {
   elements.settingsBack.addEventListener('click', hideSettings);
   elements.themeToggle.addEventListener('click', () => {
     const current = document.documentElement.dataset.theme;
-    applyTheme(current === 'dark' ? 'light' : 'dark');
+    applyTheme(current === 'dark' || current === 'glass' ? 'light' : 'dark');
   });
   elements.imageTab.addEventListener('click', () => selectSourceTab('image'));
   elements.textTab.addEventListener('click', () => selectSourceTab('text'));
@@ -595,6 +637,7 @@ function bindActions() {
 
 async function initialize() {
   refreshIcons();
+  resetGlassGlow = bindGlassGlow();
   bindActions();
   updateViewNavigation('empty');
   selectSourceTab('text');

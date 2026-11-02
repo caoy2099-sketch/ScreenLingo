@@ -70,6 +70,15 @@ test('选中文本热键和 Windows 右键菜单设置通过同一 schema 校验
   assert.throws(() => normalizeSettingsPatch({ shellIntegration: 'yes' }), { code: 'INVALID_SETTING' });
 });
 
+test('玻璃主题保存并重新加载后不回退到系统主题', (t) => {
+  const filePath = path.join(makeTempDir(t), 'settings.json');
+  const store = new SettingsStore({ filePath });
+  assert.equal(store.update({ theme: 'glass' }).theme, 'glass');
+  assert.equal(new SettingsStore({ filePath }).getPublic().theme, 'glass');
+  assert.throws(() => store.update({ theme: 'unknown-theme' }), { code: 'INVALID_SETTING' });
+  assert.equal(new SettingsStore({ filePath }).getPublic().theme, 'glass');
+});
+
 test('safeStorage 可用时 API Key 加密落盘，getPublic 不泄露明文', (t) => {
   const directory = makeTempDir(t);
   const filePath = path.join(directory, 'settings.json');

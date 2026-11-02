@@ -80,9 +80,8 @@ kbd { font: 11px var(--font-mono); }
 .app-shell { display: grid; grid-template-columns: 188px minmax(0, 1fr); grid-template-rows: 72px minmax(0, 1fr) 32px; width: 100%; height: 100%; isolation: isolate; }
 .sidebar { grid-column: 1; grid-row: 1 / -1; display: flex; flex-direction: column; min-height: 0; padding: 30px 14px 16px; border-right: 1px solid var(--border); background: var(--sidebar); }
 .brand { display: flex; align-items: center; gap: 11px; margin: 0 10px 38px; }
-.brand-mark { position: relative; display: grid; place-items: center; width: 38px; height: 42px; color: var(--accent); }
-.brand-mark > svg { position: absolute; width: 42px; height: 42px; stroke-width: 1.5; }
-.brand-mark > span { padding-top: 1px; font-size: 16px; font-weight: 700; }
+.brand-mark { display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; }
+.brand-mark > img { display: block; width: 42px; height: 42px; }
 .brand-copy { display: flex; flex-direction: column; gap: 3px; }
 .brand-copy strong { font-size: 21px; letter-spacing: .07em; font-weight: 750; }
 .brand-copy small { color: var(--ink-secondary); font: 10px var(--font-display); letter-spacing: .035em; }

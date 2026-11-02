@@ -4,7 +4,22 @@ All notable changes to ScreenLingo will be documented in this file.
 
 The format is based on Keep a Changelog, and this project follows Semantic Versioning.
 
-## [Unreleased]
+## [0.3.0] - 2026-11-02
+
+### Added
+
+- Optional glass theme for the Windows workbench and quick translation windows, with persisted settings, frosted surfaces, short view transitions, and pointer highlights on input cards.
+- Reduced-motion, reduced-transparency, and forced-colors fallbacks for the glass theme, plus dedicated visual and interaction checks.
+- Android `0.1.0-alpha.2` preview with the matching launcher icon and an increased version code for upgrades; the mobile light/dark interface is unchanged.
+
+### Changed
+
+- Simplified the application icon and in-app logo to a bold geometric translation character on an ice-cyan tile, with matching Android artwork and clearer small-size rendering.
+
+### Fixed
+
+- Screenshot selection now inherits the saved theme before its first display, including the hint bar, guides, selection border, dimensions, and keyboard hints; the glass theme no longer shows the previous purple palette during capture.
+
 
 ## [0.2.0] - 2026-10-22
 

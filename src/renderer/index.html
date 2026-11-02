@@ -4,11 +4,12 @@
     <meta charset="UTF-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; img-src data:; style-src 'self'; script-src 'self'; font-src 'self';"
+      content="default-src 'none'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self';"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>截译 ScreenLingo</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="glass.css" />
     <script defer src="../../node_modules/lucide/dist/umd/lucide.min.js"></script>
     <script defer src="app.js"></script>
   </head>
@@ -16,7 +17,7 @@
     <div id="app-shell" class="app-shell" data-view="empty">
       <aside class="sidebar" aria-label="主导航">
         <div class="brand" aria-label="截译 ScreenLingo">
-          <span class="brand-mark" aria-hidden="true"><i data-lucide="scan"></i><span>译</span></span>
+          <span class="brand-mark" aria-hidden="true"><img src="../assets/logo-mark.svg" width="42" height="42" alt="" draggable="false" /></span>
           <span class="brand-copy">
             <strong>截译</strong>
             <small>ScreenLingo</small>
@@ -346,11 +347,13 @@
 
             <section class="settings-section" aria-labelledby="theme-heading">
               <div class="settings-section-title"><h3 id="theme-heading"><i data-lucide="palette" aria-hidden="true"></i>外观主题</h3></div>
-              <div class="segmented theme-segmented" role="radiogroup" aria-label="外观主题">
+              <div class="segmented theme-segmented" role="radiogroup" aria-label="外观主题" aria-describedby="theme-note">
                 <label class="segment radio-segment"><input type="radio" name="theme" value="system" /><span>跟随系统</span></label>
                 <label class="segment radio-segment"><input type="radio" name="theme" value="light" /><span>浅色</span></label>
                 <label class="segment radio-segment"><input type="radio" name="theme" value="dark" /><span>深色</span></label>
+                <label class="segment radio-segment"><input type="radio" name="theme" value="glass" /><span>玻璃</span></label>
               </div>
+              <p id="theme-note" class="theme-note">玻璃主题使用通透面板与柔和高光，动态效果跟随系统偏好。选择后可预览，保存后应用到翻译浮窗。</p>
             </section>
 
             <section class="settings-section data-boundary" aria-labelledby="privacy-heading">

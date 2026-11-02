@@ -12,7 +12,7 @@ const OVERLAY_MAX_HEIGHT = 620;
 const SCREEN_GAP = 8;
 const CURSOR_OFFSET_X = 14;
 const CURSOR_OFFSET_Y = 16;
-const VALID_THEMES = new Set(['light', 'dark']);
+const VALID_THEMES = new Set(['light', 'dark', 'glass']);
 const VALID_ACTIONS = new Set(['close', 'copy', 'workspace', 'translate-clipboard', 'resize']);
 
 function finiteInteger(value, fallback = 0) {
@@ -170,7 +170,7 @@ class QuickResultService {
 
   createWindow(mode, bounds, theme) {
     const isOverlay = mode === 'overlay';
-    const backgroundColor = theme === 'dark' ? '#23212f' : '#fbfaff';
+    const backgroundColor = theme === 'dark' ? '#23212f' : theme === 'glass' ? '#101c2d' : '#fbfaff';
     const window = new this.BrowserWindow({
       x: bounds.x,
       y: bounds.y,
@@ -238,7 +238,7 @@ class QuickResultService {
     if (!window) return;
     try {
       window.webContents.send('quick:state', this.state);
-      window.setBackgroundColor(this.state.theme === 'dark' ? '#23212f' : '#fbfaff');
+      window.setBackgroundColor(this.state.theme === 'dark' ? '#23212f' : this.state.theme === 'glass' ? '#101c2d' : '#fbfaff');
     } catch {
       // The page may be navigating or closing; the next ready handshake repairs state.
     }
@@ -473,7 +473,7 @@ class QuickResultService {
     this.state.theme = theme;
     const window = this.getWindow();
     if (!window) return;
-    window.setBackgroundColor(theme === 'dark' ? '#23212f' : '#fbfaff');
+    window.setBackgroundColor(theme === 'dark' ? '#23212f' : theme === 'glass' ? '#101c2d' : '#fbfaff');
     try {
       window.webContents.send('quick:state', this.state);
     } catch {

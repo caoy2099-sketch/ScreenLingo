@@ -1,0 +1,209 @@
+/* Independent CSS treatment informed by React Bits' glass and glare demos.
+   Source links and configuration rationale: docs/GLASS_THEME.md. */
+.theme-note { margin: 12px 0 0; color: var(--ink-secondary); font-size: 11px; line-height: 1.8; }
+
+:root[data-theme='glass'] {
+  color-scheme: dark;
+  --bg: #101c2d;
+  --surface: #182c40;
+  --surface-raised: #20394e;
+  --surface-muted: #2d4358;
+  --sidebar: #152839;
+  --ink: #f1f7ff;
+  --ink-secondary: #c4d5e7;
+  --ink-tertiary: #a6bbd0;
+  --border: #cfe7ff30;
+  --border-strong: #cfe7ff70;
+  --accent: #9be5ef;
+  --accent-hover: #c1f5fa;
+  --accent-soft: #9be5ef1f;
+  --accent-ink: #102a36;
+  --success: #a5edcf;
+  --success-soft: #60d1a42b;
+  --danger: #ffb9ca;
+  --danger-soft: #693747;
+  --preview-bg: #193849;
+  --preview-orbit: #b4eaff40;
+  --shadow: 0 18px 42px #030e2340;
+  --shadow-soft: 0 8px 22px #030e2326;
+  --glass-fill: #182c40c4;
+  --glass-strong: #12263ce8;
+  --glass-rim: inset 0 1px 0 #e0f8ff38, inset 0 -1px 0 #e0f8ff0c;
+  --glass-blur: 18px;
+  --motion-fast: 160ms;
+  --motion-enter: 340ms;
+  --motion-ease: cubic-bezier(.22, 1, .36, 1);
+  --quick-bg: var(--bg);
+  --quick-panel: var(--surface);
+  --quick-ink: var(--ink);
+  --quick-ink-soft: var(--ink-secondary);
+  --quick-ink-faint: var(--ink-tertiary);
+  --quick-border: var(--border);
+  --quick-border-strong: var(--border-strong);
+  --quick-accent: var(--accent);
+  --quick-accent-soft: var(--accent-soft);
+  --quick-accent-ink: var(--accent-ink);
+  --quick-success: var(--success);
+  --quick-danger: var(--danger);
+  --quick-danger-soft: var(--danger-soft);
+  --quick-shadow: var(--shadow-soft);
+}
+
+/* The background is local and static: no canvas, GPU loop, or remote asset. */
+:root[data-theme='glass'] body {
+  background:
+    radial-gradient(ellipse at 63% 10%, #638caa65, transparent 51%),
+    radial-gradient(ellipse at 95% 76%, #4c579c6e, transparent 44%),
+    radial-gradient(ellipse at 25% 84%, #23867c4d, transparent 53%),
+    linear-gradient(135deg, #122336, #1a3145 52%, #192239);
+}
+
+:root[data-theme='glass'] .app-shell {
+  gap: 12px;
+  padding: 16px;
+  grid-template-columns: 180px minmax(0, 1fr);
+  grid-template-rows: 60px minmax(0, 1fr) 26px;
+}
+
+:root[data-theme='glass'] :is(.sidebar, .topbar, .source-pane, .result-pane, .settings-section, .input-card, .translation-preview, .preview-result, .toast, .quick-shell) {
+  border: 1px solid var(--border);
+  border-top-color: #e0f8ff55;
+  background: var(--surface);
+  box-shadow: var(--glass-rim), var(--shadow-soft);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  :root[data-theme='glass'] :is(.sidebar, .topbar, .source-pane, .result-pane, .settings-section, .input-card, .translation-preview, .preview-result, .toast, .quick-shell) {
+    background: linear-gradient(145deg, #e5f6ff08, #e5f6ff00 65%), var(--glass-fill);
+    backdrop-filter: blur(var(--glass-blur)) saturate(125%);
+  }
+}
+
+:root[data-theme='glass'] .sidebar { padding: 26px 12px 16px; border-radius: 20px; }
+:root[data-theme='glass'] .brand { margin-left: 8px; margin-right: 8px; }
+:root[data-theme='glass'] .brand-mark { filter: drop-shadow(0 0 12px #9be5ef30); }
+:root[data-theme='glass'] .topbar { padding: 0 22px; border-radius: 16px; }
+:root[data-theme='glass'] .statusbar { padding: 0 12px; border: 0; background: transparent; }
+:root[data-theme='glass'] .status-chip { padding: 6px 10px; border: 1px solid #a5edcf25; border-radius: 20px; background: #a5edcf0c; }
+:root[data-theme='glass'] .nav-button[aria-current='page'] {
+  border-color: #9be5ef42;
+  background: linear-gradient(115deg, #9be5ef26, #9be5ef0c);
+  box-shadow: inset 0 1px 0 #e0f8ff20;
+}
+:root[data-theme='glass'] .sidebar-label { color: var(--ink-tertiary); }
+:root[data-theme='glass'] .empty-view { padding: 20px 26px; }
+:root[data-theme='glass'] .empty-intro h2 { letter-spacing: -.04em; }
+:root[data-theme='glass'] .empty-intro h2 em { text-shadow: 0 2px 24px #9be5ef20; }
+:root[data-theme='glass'] .empty-intro p { color: var(--ink-secondary); }
+:root[data-theme='glass'] .translation-preview { --glass-fill: #97d9ef12; border-radius: 26px; }
+:root[data-theme='glass'] .translation-preview::before { border-color: #b4eaff2e; }
+:root[data-theme='glass'] .preview-code {
+  border-color: #bedfff44;
+  background: linear-gradient(135deg, #152638eb, #101e30e8);
+  box-shadow: 0 18px 32px #030e2340, inset 0 1px 0 #d2edff1f;
+}
+:root[data-theme='glass'] .preview-window { border-color: #bedfff24; }
+:root[data-theme='glass'] .preview-selection { border-color: #9be5ef; background: #9be5ef0a; }
+:root[data-theme='glass'] .crop-corner { border-color: #b9f5ff; background: #1a3346; }
+:root[data-theme='glass'] .selection-cursor svg { fill: #9be5ef; }
+:root[data-theme='glass'] .preview-result { --glass-fill: #334d63c9; right: -4px; border-radius: 16px; }
+:root[data-theme='glass'] .preview-result p { color: var(--ink); }
+:root[data-theme='glass'] .preview-result-icon { border: 1px solid #9be5ef2e; }
+:root[data-theme='glass'] .input-card { position: relative; overflow: hidden; isolation: isolate; border-radius: 16px; }
+:root[data-theme='glass'] .input-card > * { position: relative; z-index: 1; }
+:root[data-theme='glass'] .input-card:hover { border-color: #c3f2ff80; box-shadow: var(--glass-rim), 0 12px 26px #04182f40; }
+:root[data-theme='glass'] .input-card::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  top: 0;
+  width: 240px;
+  height: 240px;
+  pointer-events: none;
+  background: radial-gradient(circle, #c0f4ff1f, transparent 68%);
+  transform: translate(calc(var(--glow-x, 50px) - 120px), calc(var(--glow-y, 40px) - 120px));
+  opacity: 0;
+  transition: opacity var(--motion-fast) ease;
+}
+:root[data-theme='glass'] .input-card.glass-hover::after { opacity: 1; }
+:root[data-theme='glass'] .input-card:focus-visible { background-color: #315569; }
+:root[data-theme='glass'] .workbench { padding: 8px 0; grid-template-columns: minmax(0, .95fr) 22px minmax(0, 1.05fr); }
+:root[data-theme='glass'] :is(.source-pane, .result-pane, .settings-section) { border-radius: 18px; }
+:root[data-theme='glass'] :is(.pane-header, .pane-footer) { background: #ffffff03; }
+:root[data-theme='glass'] :is(.segmented, .question-area) { background: #09152530; }
+:root[data-theme='glass'] .segment.active,
+:root[data-theme='glass'] .radio-segment:has(input:checked) {
+  background: #b6e7ff24;
+  box-shadow: inset 0 1px 0 #e0f8ff38, 0 3px 9px #00000014;
+}
+:root[data-theme='glass'] :is(#source-text, #question-input, .field > input, .password-field > input) { background: #07162565; }
+:root[data-theme='glass'] .image-stage { background-color: #07162555; }
+:root[data-theme='glass'] .settings-view { padding: 18px 12px; }
+:root[data-theme='glass'] .settings-footer { z-index: 3; bottom: -18px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #12263cf5; }
+:root[data-theme='glass'] .toast { background: var(--glass-strong); }
+:root[data-theme='glass'] .drop-overlay { background: #12263ce8; box-shadow: var(--glass-rim), var(--shadow); }
+:root[data-theme='glass'] :is(.selection-prompt, .command-primary, .send-button) {
+  background: linear-gradient(135deg, #c3f3fb, #8dd5e1);
+  border-color: #d7faffb3;
+  box-shadow: inset 0 1px 0 #ffffff88, 0 6px 18px #040e251f;
+  color: var(--accent-ink);
+}
+:root[data-theme='glass'] :is(.selection-prompt, .command-primary, .send-button):hover { background: #c1f5fa; }
+:root[data-theme='glass'] :is(.nav-button, .icon-button, .input-card, .selection-prompt, .inline-primary, .command-button, .send-button, .quick-command, .quick-icon-button) {
+  transition: transform var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+}
+:root[data-theme='glass'] :is(.nav-button, .icon-button, .inline-primary, .command-button, .send-button, .quick-command, .quick-icon-button):not(:disabled):active { transform: scale(.97); }
+:root[data-theme='glass'] .input-card:not(:disabled):active { transform: translateY(0) scale(.99); }
+:root[data-theme='glass'] .quick-shell { border-radius: 12px; }
+:root[data-theme='glass'] :is(.quick-header, .quick-footer) { background: #e5f6ff08; }
+:root[data-theme='glass'] .quick-source p { background: #07162565; }
+
+/* Short, state-driven transitions; reading text never blurs or bounces. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-theme='glass'] :is(.empty-view, .workbench, .settings-view):not([hidden]) { animation: glass-arrive var(--motion-enter) var(--motion-ease); }
+  :root[data-theme='glass'] .welcome-stage { animation: none; }
+  :root[data-theme='glass'] :is(.source-panel, .toast, .inline-error, .answer-output):not([hidden]) { animation: glass-arrive 240ms var(--motion-ease); }
+  :root[data-theme='glass'] .quick-result:not([hidden]) { animation: glass-arrive 240ms var(--motion-ease); }
+  @keyframes glass-arrive { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+}
+
+@media (max-width: 980px) {
+  :root[data-theme='glass'] .app-shell { grid-template-columns: 60px minmax(0, 1fr); gap: 10px; padding: 12px; }
+  :root[data-theme='glass'] .sidebar { padding: 22px 6px 12px; }
+  :root[data-theme='glass'] .brand { margin-left: 0; margin-right: 0; }
+  :root[data-theme='glass'] .empty-view { padding: 16px 18px; }
+  :root[data-theme='glass'] .topbar { padding: 0 16px; }
+}
+@media (max-height: 670px) {
+  :root[data-theme='glass'] .app-shell { grid-template-rows: 52px minmax(0, 1fr) 24px; }
+  :root[data-theme='glass'] .workbench { padding: 0; }
+}
+@media (max-width: 700px) {
+  :root[data-theme='glass'] .app-shell { grid-template-columns: 48px minmax(0, 1fr); gap: 8px; padding: 8px; }
+  :root[data-theme='glass'] .sidebar { padding: 20px 2px 10px; border-radius: 14px; }
+  :root[data-theme='glass'] .topbar { padding: 0 10px; }
+  :root[data-theme='glass'] .empty-view { padding: 16px 10px; }
+  :root[data-theme='glass'] .workbench { grid-template-columns: 1fr; }
+  :root[data-theme='glass'] .settings-view { padding: 14px 4px; }
+  :root[data-theme='glass'] .settings-footer { bottom: -14px; }
+  .theme-segmented { flex-wrap: wrap; }
+  .theme-segmented .segment { flex-basis: 45%; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-theme='glass'] { --glass-fill: #182c40; --glass-blur: 0px; }
+  :root[data-theme='glass'] :is(.translation-preview, .preview-result) { --glass-fill: #20394e; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme='glass'] *, :root[data-theme='glass'] *::before, :root[data-theme='glass'] *::after { animation: none !important; transition: none !important; }
+  :root[data-theme='glass'] .input-card::after { display: none; }
+}
+@media (forced-colors: active) {
+  :root[data-theme='glass'] { --glass-rim: none; --shadow-soft: none; }
+  :root[data-theme='glass'] body { background: Canvas; }
+  :root[data-theme='glass'] :is(.sidebar, .topbar, .source-pane, .result-pane, .settings-section, .input-card, .translation-preview, .preview-result, .toast, .quick-shell) { background: Canvas; border-color: CanvasText; backdrop-filter: none; }
+  :root[data-theme='glass'] .input-card::after { display: none; }
+  :root[data-theme='glass'] .nav-button[aria-current='page'],
+  :root[data-theme='glass'] .radio-segment:has(input:checked),
+  :root[data-theme='glass'] .segment.active { outline: 1px solid Highlight; outline-offset: -2px; }
+}

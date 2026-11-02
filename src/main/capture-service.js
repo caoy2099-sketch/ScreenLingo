@@ -5,6 +5,7 @@ const path = require('node:path');
 const MIN_SELECTION_SIZE = 8;
 const MAX_CAPTURE_PIXELS = 32_000_000;
 const MAX_SCREENSHOT_PIXELS = 16_000_000;
+const CAPTURE_THEMES = new Set(['light', 'dark', 'glass']);
 
 function fitSizeWithinPixelLimit(size, maxPixels = MAX_SCREENSHOT_PIXELS) {
   const width = Math.max(1, Math.round(Number(size?.width) || 0));
@@ -110,11 +111,12 @@ class CaptureService {
     this.pending = null;
   }
 
-  async captureCurrentDisplay() {
+  async captureCurrentDisplay({ theme = 'dark' } = {}) {
     if (this.pending) {
       this.captureWindow?.focus();
       return this.pending.promise;
     }
+    const captureTheme = CAPTURE_THEMES.has(theme) ? theme : 'dark';
 
     let resolvePending;
     let rejectPending;
@@ -216,7 +218,8 @@ class CaptureService {
         });
       });
 
-      await captureWindow.loadFile(this.capturePagePath);
+      // Resolve the palette before the first paint, including before image initialization.
+      await captureWindow.loadFile(this.capturePagePath, { query: { theme: captureTheme } });
     } catch (error) {
       if (this.pending === pending) this.fail(error);
     }

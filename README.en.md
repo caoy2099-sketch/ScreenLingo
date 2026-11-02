@@ -4,19 +4,17 @@ English | [简体中文](README.md)
 
 A Windows utility for local screenshot OCR, developer-error translation, and visual questions about the current screenshot. It also works as a lightweight Windows layer: translated screenshots cover the original selection, selected-text translations appear beside the cursor, and Explorer's context menu can start a capture.
 
-![Screenshot translation overlay](docs/assets/screenlingo-overlay.png)
-
-![ScreenLingo home screen](docs/assets/screenlingo-home.png)
+![ScreenLingo glass theme](docs/assets/screenlingo-glass.png)
 
 ## Download
 
-Download the [latest Release](https://github.com/caoy2099-sketch/ScreenLingo/releases/latest), or download the current v0.2.0 assets directly:
+Download the [latest Release](https://github.com/caoy2099-sketch/ScreenLingo/releases/latest), or download the current v0.3.0 assets directly:
 
 | File | Recommended use |
 | --- | --- |
-| [ScreenLingo-0.2.0-win-x64.zip](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.2.0/ScreenLingo-0.2.0-win-x64.zip) | Recommended. Extract the archive and run `win-unpacked/截译 ScreenLingo.exe`; keep the folder together. |
-| [ScreenLingo-0.2.0-x64.exe](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.2.0/ScreenLingo-0.2.0-x64.exe) | Single-file portable build. It extracts itself on every launch, so startup is slower. |
-| [SHA256SUMS.txt](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.2.0/SHA256SUMS.txt) | Verify downloaded files. |
+| [ScreenLingo-0.3.0-win-x64.zip](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.3.0/ScreenLingo-0.3.0-win-x64.zip) | Recommended. Extract the archive and run `win-unpacked/截译 ScreenLingo.exe`; keep the folder together. |
+| [ScreenLingo-0.3.0-x64.exe](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.3.0/ScreenLingo-0.3.0-x64.exe) | Single-file portable build. It extracts itself on every launch, so startup is slower. |
+| [SHA256SUMS.txt](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/v0.3.0/SHA256SUMS.txt) | Verify downloaded files. |
 
 The executable is currently unsigned. Windows SmartScreen may show an “Unknown publisher” warning on first launch. Download builds only from this repository's Releases page.
 
@@ -24,7 +22,7 @@ The executable is currently unsigned. Windows SmartScreen may show an “Unknown
 
 The Android preview turns “share a screenshot or text → local OCR → select words or sentences → translate, ask, copy, or search” into a mobile workflow. It supports Photo Picker, system sharing, compatible text-selection menus, and explicit paste. A screenshot is sent to a vision model only when you actively enable the attachment in a question.
 
-Version `0.1.0-alpha.1` is available as a personal preview package from the [Android alpha Release](https://github.com/caoy2099-sketch/ScreenLingo/releases/tag/mobile-v0.1.0-alpha.1), but compatibility testing across real Android devices is still pending. Default translation uses Bing's web endpoint; Android's current VPN or proxy routing is respected, and the app does not scan v2rayN on a computer. See the [Android mobile guide](mobile/README.md) for installation, privacy boundaries, build verification, and limitations.
+Version `0.1.0-alpha.2`: [download APK](https://github.com/caoy2099-sketch/ScreenLingo/releases/download/mobile-v0.1.0-alpha.2/ScreenLingo-mobile-0.1.0-alpha.2-debug.apk) · [release notes](https://github.com/caoy2099-sketch/ScreenLingo/releases/tag/mobile-v0.1.0-alpha.2). This update adopts the new translation-character icon; Android keeps its existing light/dark interface. The APK is a debug-signed personal preview, and compatibility testing across real Android devices is still pending. See the [Android mobile guide](mobile/README.md) for usage and limitations.
 
 ## Start in three steps
 
@@ -44,6 +42,10 @@ You can also select text and press `Alt+Shift+X` to show a small translation pan
 Windows does not expose a general API for adding items to every application's native text context menu. ScreenLingo avoids process injection, so selected-text translation uses the shortcut and tray entry. See [Windows integration](docs/WINDOWS_INTEGRATION.md) for boundaries, registry keys, and removal.
 
 ![Selected text translation panel](docs/assets/screenlingo-selection-panel.png)
+
+## Glass theme
+
+Choose **Settings → Appearance → Glass**, then save. The workbench, quick translation panels, and screenshot-selection hints share navy surfaces and ice-cyan accents. Button presses, card highlights, and view changes use subtle motion and respect system reduced-motion settings. [See the theme preview](docs/GLASS_THEME.md).
 
 ## Common shortcuts
 

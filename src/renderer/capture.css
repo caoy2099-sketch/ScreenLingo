@@ -3,6 +3,56 @@
   --selection: #bcaeff;
   --selection-ink: #272439;
   --scrim: rgba(20, 17, 32, 0.56);
+  --capture-bg: #1b1828;
+  --selection-rim: rgba(39, 36, 57, 0.5);
+  --selection-shadow: rgba(20, 17, 32, 0.45);
+  --guide: rgba(188, 174, 255, 0.56);
+  --mark-border: rgba(188, 174, 255, 0.24);
+  --mark-text: #f5f2ff;
+  --mark-bg: rgba(39, 36, 57, 0.92);
+  --mark-solid: #272439;
+  --panel-shadow: rgba(20, 17, 32, 0.2);
+  --brand: #d4caff;
+  --hint: #e0daef;
+  --divider: rgba(188, 174, 255, 0.28);
+  --key-bg: rgba(188, 174, 255, 0.1);
+  --error: #ffd8d8;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --selection: #6857d9;
+  --selection-ink: #ffffff;
+  --guide: rgba(104, 87, 217, 0.65);
+  --mark-border: #938ca4;
+  --mark-text: #29263d;
+  --mark-bg: rgba(252, 251, 254, 0.96);
+  --mark-solid: #fcfbfe;
+  --brand: #5644c3;
+  --hint: #524b68;
+  --divider: #938ca4;
+  --key-bg: #eeeafb;
+  --error: #b83855;
+}
+
+:root[data-theme='glass'] {
+  --selection: #74e8f5;
+  --selection-ink: #102a36;
+  --scrim: rgba(6, 17, 24, 0.56);
+  --capture-bg: #102a36;
+  --selection-rim: rgba(6, 17, 24, 0.65);
+  --selection-shadow: rgba(6, 17, 24, 0.5);
+  --guide: rgba(155, 229, 239, 0.65);
+  --mark-border: rgba(155, 229, 239, 0.45);
+  --mark-text: #f1f7ff;
+  --mark-bg: rgba(16, 42, 54, 0.94);
+  --mark-solid: #102a36;
+  --panel-shadow: rgba(3, 14, 35, 0.3);
+  --brand: #9be5ef;
+  --hint: #d4e9f1;
+  --divider: rgba(155, 229, 239, 0.4);
+  --key-bg: rgba(155, 229, 239, 0.12);
+  --error: #ffb9ca;
 }
 
 * {
@@ -21,7 +71,7 @@ body,
 body {
   user-select: none;
   cursor: crosshair;
-  background: #1b1828;
+  background: var(--capture-bg);
   font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
 }
 
@@ -61,7 +111,7 @@ body {
   position: absolute;
   z-index: 20;
   border: 1px solid var(--selection);
-  box-shadow: 0 0 0 1px rgba(39, 36, 57, 0.5), 0 0 0 9999px var(--scrim);
+  box-shadow: 0 0 0 1px var(--selection-rim), 0 0 0 9999px var(--scrim);
   pointer-events: none;
 }
 
@@ -71,7 +121,7 @@ body {
   height: 16px;
   border-color: var(--selection);
   border-style: solid;
-  filter: drop-shadow(0 1px 2px rgba(20, 17, 32, 0.45));
+  filter: drop-shadow(0 1px 2px var(--selection-shadow));
 }
 
 .corner-tl {
@@ -109,7 +159,7 @@ body {
   border-radius: 7px;
   color: var(--selection-ink);
   background: var(--selection);
-  box-shadow: 0 3px 12px rgba(20, 17, 32, 0.2);
+  box-shadow: 0 3px 12px var(--panel-shadow);
   font-family: "Cascadia Mono", Consolas, monospace;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
@@ -122,7 +172,7 @@ body {
   z-index: 10;
   display: none;
   pointer-events: none;
-  background: rgba(188, 174, 255, 0.56);
+  background: var(--guide);
 }
 
 #cursor-x {
@@ -148,11 +198,11 @@ body {
   gap: 10px;
   min-height: 40px;
   padding: 8px 13px;
-  border: 1px solid rgba(188, 174, 255, 0.24);
+  border: 1px solid var(--mark-border);
   border-radius: 11px;
-  color: #f5f2ff;
-  background: rgba(39, 36, 57, 0.92);
-  box-shadow: 0 4px 20px rgba(20, 17, 32, 0.2);
+  color: var(--mark-text);
+  background: var(--mark-bg);
+  box-shadow: 0 4px 20px var(--panel-shadow);
   backdrop-filter: blur(12px);
   font-size: 13px;
   line-height: 20px;
@@ -162,32 +212,32 @@ body {
 }
 
 .capture-brand {
-  color: #d4caff;
+  color: var(--brand);
   font-weight: 650;
 }
 
 .capture-divider {
   width: 1px;
   height: 14px;
-  background: rgba(188, 174, 255, 0.28);
+  background: var(--divider);
 }
 
 .capture-hint {
-  color: #e0daef;
+  color: var(--hint);
 }
 
 .capture-error {
   flex-basis: 100%;
-  color: #ffd8d8;
+  color: var(--error);
   font-size: 12px;
 }
 
 .capture-mark kbd {
   padding: 1px 5px;
-  border: 1px solid rgba(188, 174, 255, 0.28);
+  border: 1px solid var(--divider);
   border-radius: 4px;
-  color: #f5f2ff;
-  background: rgba(188, 174, 255, 0.1);
+  color: var(--mark-text);
+  background: var(--key-bg);
   font: 11px "Cascadia Mono", Consolas, monospace;
 }
 
@@ -195,4 +245,31 @@ body {
   #selection {
     transition: opacity 120ms ease-out;
   }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .capture-mark { background: var(--mark-solid); backdrop-filter: none; }
+}
+
+@media (forced-colors: active) {
+  :root[data-theme] {
+    --selection: Highlight;
+    --selection-ink: HighlightText;
+    --guide: Highlight;
+    --mark-border: CanvasText;
+    --mark-text: CanvasText;
+    --mark-bg: Canvas;
+    --mark-solid: Canvas;
+    --brand: CanvasText;
+    --hint: CanvasText;
+    --divider: CanvasText;
+    --key-bg: Canvas;
+    --error: CanvasText;
+  }
+  #screen-image { forced-color-adjust: none; }
+  #selection, .corner { border-color: Highlight; }
+  .guide { forced-color-adjust: none; background: Highlight; }
+  .capture-mark { background: Canvas; backdrop-filter: none; }
+  .capture-mark, #selection-size, .capture-mark kbd { border-color: CanvasText; }
+  .corner { filter: none; }
 }

@@ -1,6 +1,6 @@
 # Android 开发与验证
 
-普通使用说明见 [README](README.md)。这个工程与 Windows Electron 应用独立，移动版目前是 `0.1.0-alpha.1` 本地体验版。
+普通使用说明见 [README](README.md)。这个工程与 Windows Electron 应用独立，移动版目前是 `0.1.0-alpha.2` 体验版，`versionCode` 为 `2`。
 
 ## 构建
 
@@ -29,6 +29,16 @@ Windows 中文目录说明：当前纯 Kotlin/Compose 工程允许非 ASCII 项�
 默认翻译使用必应网页接口，不是稳定性有保障的官方付费 API。确定性网络测试使用本机 MockWebServer，不发送用户内容或实际调用收费模型。
 
 ## 验证范围
+
+### 0.1.0-alpha.2（2026-11-02）
+
+- `testDebugUnitTest`、`lintDebug` 和 `assembleDebug` 成功：38 项 JVM 测试通过，Lint 无错误，4 项警告均为依赖存在较新版本的提示。
+- APK 为 63,501,783 字节；`aapt` 确认 `versionCode=2`、`versionName=0.1.0-alpha.2` 和新版启动图标。
+- `apksigner` 验签通过，证书与本地 alpha.1 构建一致；签名 SHA-256 为 `2ad9a9232d10099b693abfe8c8e947cb8ddaa2f53d8ea2750d386c08285723c3`。
+- APK SHA-256：`07dc1f46e602a557e96194375ad9e817a70cbceb84bb9cae7588d911a252e358`，发布附件同时提供 `SHA256SUMS.txt`。
+- `adb` 未连接手机或模拟器；未执行安装、升级和设备交互验收。本次 Android 源码改动为启动图标与版本号，未修改移动端页面。
+
+### 自动化覆盖与设备验收
 
 JVM 测试覆盖分段与标点保留、URL/密钥验证、请求结构、图片 opt-in、重定向拒绝、输入及响应上限、HTTP 取消、图片提供方阻塞、内部超时与用户取消、冷启动分享时的服务选择及设置保存隔离，以及默认必应入口。
 

@@ -96,15 +96,14 @@ body[data-mode='panel'] .quick-shell {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  border: 1px solid color-mix(in srgb, var(--quick-accent) 28%, transparent);
-  border-radius: 7px;
-  color: var(--quick-accent);
-  background: var(--quick-accent-soft);
-  font-size: 12px;
-  font-weight: 750;
-  letter-spacing: .02em;
+  width: 28px;
+  height: 28px;
+}
+
+.quick-mark > img {
+  display: block;
+  width: 28px;
+  height: 28px;
 }
 
 .quick-heading {

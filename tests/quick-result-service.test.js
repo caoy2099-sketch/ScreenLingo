@@ -152,8 +152,23 @@ test('computePanelResize respects minimum, maximum, and work-area bounds', () =>
 test('resolveQuickTheme honors explicit themes and the system preference', () => {
   assert.equal(resolveQuickTheme('light', true), 'light');
   assert.equal(resolveQuickTheme('dark', false), 'dark');
+  assert.equal(resolveQuickTheme('glass', false), 'glass');
+  assert.equal(resolveQuickTheme('glass', true), 'glass');
   assert.equal(resolveQuickTheme('system', true), 'dark');
   assert.equal(resolveQuickTheme(undefined, false), 'light');
+});
+
+test('glass theme reaches an existing quick window and remains explicit on subsequent results', () => {
+  const { service, windows } = createHarness({ resolveTheme: (theme) => resolveQuickTheme(theme, false) });
+  const anchor = { x: 50, y: 60, width: 420, height: 180 };
+  service.showCaptureLoading(anchor, { theme: 'light' });
+  service.updateTheme('glass');
+  assert.equal(service.ready(windows[0].webContents).state.theme, 'glass');
+  assert.equal(windows[0].backgroundColor, '#101c2d');
+  assert.equal(windows[0].webContents.sent.at(-1).payload.theme, 'glass');
+  service.showCaptureResult(anchor, { translation: '类型错误', theme: 'glass' });
+  assert.equal(windows.length, 1);
+  assert.equal(service.ready(windows[0].webContents).state.theme, 'glass');
 });
 
 test('QuickResultService creates an overlay at the capture rect and updates it in place', () => {
